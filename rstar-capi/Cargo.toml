@@ -1,6 +1,14 @@
 [package]
 name = "rstar-capi"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+rstar = { path = "../rstar"}
+
+[build-dependencies]
+cbindgen = "0.29"
+
+[lib]
+name = "rstar_capi"
+crate-type = ["cdylib"]
