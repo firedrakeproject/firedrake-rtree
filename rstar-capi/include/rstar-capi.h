@@ -43,6 +43,8 @@ RTreeError rtree_node_children(const struct RTreeNodeH *node,
 
 RTreeError rtree_node_children_free(struct RTreeNodeH **children, size_t n);
 
+RTreeError rtree_node_envelope(const struct RTreeNodeH *node, double *min_out, double *max_out);
+
 RTreeError rtree_node_free(struct RTreeNodeH *node);
 
 RTreeError rtree_node_id(const struct RTreeNodeH *node, size_t *id);
