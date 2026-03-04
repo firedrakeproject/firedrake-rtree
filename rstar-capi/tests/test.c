@@ -17,6 +17,24 @@ bool test_create_and_free(void) {
 }
 
 
+bool test_null(void) {
+    // Test that passing null pointers returns NullPointer error
+    RTreeError err = rtree_create(NULL, 2);
+    if (err != NullPointer) {
+        fprintf(stderr, "Expected NullPointer error for rtree_create with null pointer\n");
+        return false;
+    }
+
+    err = rtree_free(NULL);
+    if (err != NullPointer) {
+        fprintf(stderr, "Expected NullPointer error for rtree_free with null pointer\n");
+        return false;
+    }
+
+    return true;
+}
+
+
 bool test_get_dimension(void) {
     RTreeH *tree3d = NULL;
     const uint32_t dim3d = 3;
@@ -47,6 +65,7 @@ bool test_get_dimension(void) {
     }
     return true;
 }
+
 
 bool test_bulk_load(void) {
     const size_t N = 2;
@@ -103,6 +122,7 @@ bool test_bulk_load(void) {
     rtree_free(tree);
     return true;
 }
+
 
 bool test_nodes(void) {
     const size_t N = 2;
@@ -161,6 +181,7 @@ bool test_nodes(void) {
     return true;
 }
 
+
 bool test_root_node_id(void) {
     const size_t N = 2;
     const uint32_t dim = 2;
@@ -212,6 +233,7 @@ int main(void) {
     bool passed = true;
 
     run_test(test_create_and_free, "test_create_and_free", &passed);
+    run_test(test_null, "test_null", &passed);
     run_test(test_get_dimension, "test_get_dimension", &passed);
     run_test(test_bulk_load, "test_bulk_load", &passed);
     run_test(test_nodes, "test_nodes", &passed);

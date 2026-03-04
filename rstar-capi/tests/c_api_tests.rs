@@ -31,7 +31,7 @@ fn c_api() {
             test_src.to_str().unwrap(),
         ])
         .status()
-        .expect("Failed to invoke gcc — is it installed?");
+        .expect("Failed to call gcc");
 
     assert!(
         compile_status.success(),
