@@ -7,4 +7,6 @@
 
 typedef struct RTreeH RTreeH;
 
-void rtree_create(struct RTreeH **tree, size_t dim);
+void rtree_create(struct RTreeH **tree, uint32_t dim);
+
+void rtree_free(struct RTreeH *tree);

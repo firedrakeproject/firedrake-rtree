@@ -16,7 +16,7 @@ pub enum RTreeH {}
 #[no_mangle]
 pub extern "C" fn rtree_create(
     tree: *mut *mut RTreeH,
-    dim: usize,
+    dim: u32,
 ) {
     if tree.is_null() {
         return;
@@ -27,4 +27,15 @@ pub extern "C" fn rtree_create(
         _ => return, // Invalid dimension
     };
     unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
+}
+
+
+#[no_mangle]
+pub extern "C" fn rtree_free(
+    tree: *mut RTreeH,
+) {
+    if tree.is_null() {
+        return;
+    }
+    drop(unsafe { Box::from_raw(tree as *mut RTreeDim) });
 }
