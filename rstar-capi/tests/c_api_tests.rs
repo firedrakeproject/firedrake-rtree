@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-
 #[test]
 fn c_api() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

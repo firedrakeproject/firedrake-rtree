@@ -12,12 +12,8 @@ enum NodeRef {
 
 pub enum RTreeNodeH {}
 
-
 #[no_mangle]
-pub extern "C" fn rtree_root_node(
-    tree: *const RTreeH,
-    node: *mut *mut RTreeNodeH,
-) -> RTreeError {
+pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNodeH) -> RTreeError {
     if tree.is_null() || node.is_null() {
         return RTreeError::NullPointer;
     }
@@ -29,7 +25,6 @@ pub extern "C" fn rtree_root_node(
     unsafe { *node = Box::into_raw(Box::new(node_ref)) as *mut RTreeNodeH };
     RTreeError::Success
 }
-
 
 #[no_mangle]
 pub extern "C" fn rtree_node_children(
@@ -85,12 +80,8 @@ pub extern "C" fn rtree_node_children(
     RTreeError::Success
 }
 
-
 #[no_mangle]
-pub extern "C" fn rtree_node_id(
-    node: *const RTreeNodeH,
-    id: *mut usize,
-) -> RTreeError {
+pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTreeError {
     if node.is_null() || id.is_null() {
         return RTreeError::NullPointer;
     }
@@ -112,11 +103,8 @@ pub extern "C" fn rtree_node_id(
     RTreeError::Success
 }
 
-
 #[no_mangle]
-pub extern "C" fn rtree_node_free(
-    node: *mut RTreeNodeH,
-) -> RTreeError {
+pub extern "C" fn rtree_node_free(node: *mut RTreeNodeH) -> RTreeError {
     if node.is_null() {
         return RTreeError::NullPointer;
     }
@@ -124,12 +112,8 @@ pub extern "C" fn rtree_node_free(
     RTreeError::Success
 }
 
-
 #[no_mangle]
-pub extern "C" fn rtree_node_children_free(
-    children: *mut *mut RTreeNodeH,
-    n: usize,
-) -> RTreeError {
+pub extern "C" fn rtree_node_children_free(children: *mut *mut RTreeNodeH, n: usize) -> RTreeError {
     if children.is_null() {
         return RTreeError::NullPointer;
     }

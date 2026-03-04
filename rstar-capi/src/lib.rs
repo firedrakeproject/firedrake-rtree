@@ -9,7 +9,7 @@ pub use error::RTreeError;
 type Object2D = GeomWithData<Rectangle<[f64; 2]>, usize>;
 type Object3D = GeomWithData<Rectangle<[f64; 3]>, usize>;
 
-enum RTreeDim  {
+enum RTreeDim {
     D2(RTree<Object2D>),
     D3(RTree<Object3D>),
 }
@@ -17,36 +17,28 @@ enum RTreeDim  {
 // Opaque handle for C api
 pub enum RTreeH {}
 
-
 #[no_mangle]
-pub extern "C" fn rtree_create(
-    tree: *mut *mut RTreeH,
-    dim: u32,
-) -> RTreeError {
+pub extern "C" fn rtree_create(tree: *mut *mut RTreeH, dim: u32) -> RTreeError {
     if tree.is_null() {
         return RTreeError::NullPointer;
     }
     let rtree = match dim {
         2 => RTreeDim::D2(RTree::new()),
         3 => RTreeDim::D3(RTree::new()),
-        _ => return RTreeError::InvalidDimension
+        _ => return RTreeError::InvalidDimension,
     };
     unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
     RTreeError::Success
 }
 
-
 #[no_mangle]
-pub extern "C" fn rtree_free(
-    tree: *mut RTreeH,
-) -> RTreeError {
+pub extern "C" fn rtree_free(tree: *mut RTreeH) -> RTreeError {
     if tree.is_null() {
         return RTreeError::NullPointer;
     }
     drop(unsafe { Box::from_raw(tree as *mut RTreeDim) });
     RTreeError::Success
 }
-
 
 fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
     match tree {
@@ -56,10 +48,7 @@ fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
 }
 
 #[no_mangle]
-pub extern "C" fn rtree_get_dimension(
-    tree: *const RTreeH,
-    dim: *mut u32,
-) -> RTreeError {
+pub extern "C" fn rtree_get_dimension(tree: *const RTreeH, dim: *mut u32) -> RTreeError {
     if tree.is_null() || dim.is_null() {
         return RTreeError::NullPointer;
     }
@@ -105,13 +94,12 @@ pub extern "C" fn rtree_bulk_load(
     let rtree = match dim {
         2 => RTreeDim::D2(_rtree_bulk_load::<2>(mins, maxs, ids, n)),
         3 => RTreeDim::D3(_rtree_bulk_load::<3>(mins, maxs, ids, n)),
-        _ => return RTreeError::InvalidDimension
+        _ => return RTreeError::InvalidDimension,
     };
 
     unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
     RTreeError::Success
 }
-
 
 #[no_mangle]
 pub extern "C" fn rtree_locate_all_at_point(
@@ -146,12 +134,8 @@ pub extern "C" fn rtree_locate_all_at_point(
     RTreeError::Success
 }
 
-
 #[no_mangle]
-pub extern "C" fn rtree_free_ids(
-    ids: *mut usize,
-    n: usize,
-) -> RTreeError {
+pub extern "C" fn rtree_free_ids(ids: *mut usize, n: usize) -> RTreeError {
     if ids.is_null() {
         return RTreeError::NullPointer;
     }

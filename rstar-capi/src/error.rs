@@ -1,5 +1,3 @@
-
-
 #[repr(u16)]
 pub enum RTreeError {
     Success = 0,
