@@ -2,6 +2,7 @@ use rstar::primitives::{GeomWithData, Rectangle};
 use rstar::RTree;
 
 mod error;
+mod node;
 
 pub use error::RTreeError;
 
