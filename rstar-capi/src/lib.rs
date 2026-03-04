@@ -39,3 +39,21 @@ pub extern "C" fn rtree_free(
     }
     drop(unsafe { Box::from_raw(tree as *mut RTreeDim) });
 }
+
+
+#[no_mangle]
+pub extern "C" fn rtree_get_dimension(
+    tree: *const RTreeH,
+    dim: *mut u32,
+) {
+    if tree.is_null() || dim.is_null() {
+        return;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let dimension = match rtree {
+        RTreeDim::D2(_) => 2,
+        RTreeDim::D3(_) => 3,
+    };
+    unsafe { *dim = dimension };
+}
+
