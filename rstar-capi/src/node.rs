@@ -1,4 +1,4 @@
-use rstar::{ParentNode, RTreeNode, RTreeObject};
+use rstar::{ParentNode, RTreeNode};
 
 use crate::error::RTreeError;
 use crate::{Object2D, Object3D, RTreeDim, RTreeH};
@@ -27,6 +27,88 @@ pub extern "C" fn rtree_root_node(
         RTreeDim::D3(tree) => NodeRef::Parent3D(tree.root() as *const _),
     };
     unsafe { *node = Box::into_raw(Box::new(node_ref)) as *mut RTreeNodeH };
+    RTreeError::Success
+}
+
+
+#[no_mangle]
+pub extern "C" fn rtree_node_children(
+    node: *const RTreeNodeH,
+    children: *mut *mut *mut RTreeNodeH,
+    nchildren: *mut usize,
+) -> RTreeError {
+    if node.is_null() || children.is_null() || nchildren.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let node_ref = unsafe { &*(node as *const NodeRef) };
+
+    let child_node_refs: Vec<NodeRef> = match node_ref {
+        NodeRef::Parent2D(ptr) => unsafe { &**ptr }
+            .children()
+            .iter()
+            .map(|child| NodeRef::Node2D(child as *const _))
+            .collect(),
+        NodeRef::Parent3D(ptr) => unsafe { &**ptr }
+            .children()
+            .iter()
+            .map(|child| NodeRef::Node3D(child as *const _))
+            .collect(),
+        NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(_) => Vec::new(),
+            RTreeNode::Parent(parent) => parent
+                .children()
+                .iter()
+                .map(|child| NodeRef::Node2D(child as *const _))
+                .collect(),
+        },
+        NodeRef::Node3D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(_) => Vec::new(),
+            RTreeNode::Parent(parent) => parent
+                .children()
+                .iter()
+                .map(|child| NodeRef::Node3D(child as *const _))
+                .collect(),
+        },
+    };
+
+    let mut child_ptrs: Vec<*mut RTreeNodeH> = child_node_refs
+        .into_iter()
+        .map(|node_ref| Box::into_raw(Box::new(node_ref)) as *mut RTreeNodeH)
+        .collect();
+    child_ptrs.shrink_to_fit();
+
+    unsafe {
+        *nchildren = child_ptrs.len();
+        *children = child_ptrs.as_mut_ptr();
+    }
+    std::mem::forget(child_ptrs);
+    RTreeError::Success
+}
+
+
+#[no_mangle]
+pub extern "C" fn rtree_node_id(
+    node: *const RTreeNodeH,
+    id: *mut usize,
+) -> RTreeError {
+    if node.is_null() || id.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let node_ref = unsafe { &*(node as *const NodeRef) };
+
+    let node_id = match node_ref {
+        NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => return RTreeError::NodeNotLeaf,
+        NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(leaf) => leaf.data,
+            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
+        },
+        NodeRef::Node3D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(leaf) => leaf.data,
+            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
+        },
+    };
+
+    unsafe { *id = node_id };
     RTreeError::Success
 }
 
