@@ -51,8 +51,8 @@ bool test_get_dimension(void) {
 bool test_bulk_load(void) {
     const size_t N = 2;
     const uint32_t dim = 2;
-    double mins[4] = {0.0, 0.0, 2.0, 2.0};
-    double maxs[4] = {0.5, 0.5, 3.0, 3.0};
+    double mins[4] = {0.0, 0.0, 1.0, 1.0};
+    double maxs[4] = {2.0, 2.0, 3.0, 3.0};
     size_t ids[2] = {1, 2};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
@@ -67,13 +67,13 @@ bool test_bulk_load(void) {
     size_t *ids_out1 = NULL;
     size_t nids_out1 = 0;
     rtree_locate_all_at_point(tree, point1, &ids_out1, &nids_out1);
-    if (nids_out1 != 2 || ids_out1[0] != 1 || ids_out1[1] != 2) {
+    if (nids_out1 != 2 || ids_out1[0] != 2 || ids_out1[1] != 1) {
         fprintf(stderr, "Expected to find ids [1, 2] at point1");
-        free(ids_out1);
+        rtree_free_ids(ids_out1, nids_out1);
         rtree_free(tree);
         return false;
     } else {
-        free(ids_out1);
+        rtree_free_ids(ids_out1, nids_out1);
     }
 
     size_t *ids_out2 = NULL;
@@ -81,11 +81,11 @@ bool test_bulk_load(void) {
     rtree_locate_all_at_point(tree, point2, &ids_out2, &nids_out2);
     if (nids_out2 != 1 || ids_out2[0] != 1) {
         fprintf(stderr, "Expected to find id [1] at point2");
-        free(ids_out2);
+        rtree_free_ids(ids_out2, nids_out2);
         rtree_free(tree);
         return false;
     } else {
-        free(ids_out2);
+        rtree_free_ids(ids_out2, nids_out2);
     }
 
     size_t *ids_out3 = NULL;
@@ -93,11 +93,11 @@ bool test_bulk_load(void) {
     rtree_locate_all_at_point(tree, point3, &ids_out3, &nids_out3);
     if (nids_out3 != 0) {
         fprintf(stderr, "Expected to find no ids at point3");
-        free(ids_out3);
+        rtree_free_ids(ids_out3, nids_out3);
         rtree_free(tree);
         return false;
     } else {
-        free(ids_out3);
+        rtree_free_ids(ids_out3, nids_out3);
     }
 
     rtree_free(tree);

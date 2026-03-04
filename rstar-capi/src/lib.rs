@@ -86,17 +86,17 @@ pub extern "C" fn rtree_bulk_load(
     tree: *mut *mut RTreeH,
     mins: *const f64,
     maxs: *const f64,
-    data: *const usize,
+    ids: *const usize,
     n: usize,
     dim: u32,
 ) {
-    if tree.is_null() || mins.is_null() || maxs.is_null() || data.is_null() {
+    if tree.is_null() || mins.is_null() || maxs.is_null() || ids.is_null() {
         return;
     }
 
     let rtree = match dim {
-        2 => RTreeDim::D2(_rtree_bulk_load::<2>(mins, maxs, data, n)),
-        3 => RTreeDim::D3(_rtree_bulk_load::<3>(mins, maxs, data, n)),
+        2 => RTreeDim::D2(_rtree_bulk_load::<2>(mins, maxs, ids, n)),
+        3 => RTreeDim::D3(_rtree_bulk_load::<3>(mins, maxs, ids, n)),
         _ => return, // Invalid dimension
     };
 
@@ -115,16 +115,35 @@ pub extern "C" fn rtree_locate_all_at_point(
         return;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
-    let dim = _rtree_get_dimension(rtree) as usize;
-    let point = unsafe { std::slice::from_raw_parts(point, dim) };
-
-    let ids: Vec<usize> = match rtree {
-        RTreeDim::D2(tree) => tree.locate_all_at_point(point.try_into().unwrap()).map(|obj| obj.data).collect(),
-        RTreeDim::D3(tree) => tree.locate_all_at_point(point.try_into().unwrap()).map(|obj| obj.data).collect(),
+    let mut ids: Vec<usize> = match rtree {
+        RTreeDim::D2(tree) => {
+            let p: [f64; 2] = unsafe { *(point as *const [f64; 2]) };
+            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
+        }
+        RTreeDim::D3(tree) => {
+            let p: [f64; 3] = unsafe { *(point as *const [f64; 3]) };
+            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
+        }
     };
 
+    let n = ids.len();
+    let ptr = ids.as_mut_ptr();
+    std::mem::forget(ids);
+
     unsafe {
-        *ids_out = ids.as_ptr() as *mut usize;
-        *nids_out = ids.len();
+        *nids_out = n;
+        *ids_out = ptr;
     }
+}
+
+
+#[no_mangle]
+pub extern "C" fn rtree_free_ids(
+    ids: *mut usize,
+    n: usize,
+) {
+    if ids.is_null() {
+        return;
+    }
+    unsafe { drop(Vec::from_raw_parts(ids, n, n)) };
 }

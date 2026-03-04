@@ -10,13 +10,15 @@ typedef struct RTreeH RTreeH;
 void rtree_bulk_load(struct RTreeH **tree,
                      const double *mins,
                      const double *maxs,
-                     const size_t *data,
+                     const size_t *ids,
                      size_t n,
                      uint32_t dim);
 
 void rtree_create(struct RTreeH **tree, uint32_t dim);
 
 void rtree_free(struct RTreeH *tree);
+
+void rtree_free_ids(size_t *ids, size_t n);
 
 void rtree_get_dimension(const struct RTreeH *tree, uint32_t *dim);
 
