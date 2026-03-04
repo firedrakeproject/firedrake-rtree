@@ -147,11 +147,6 @@ pub extern "C" fn rtree_node_children_free(children: *mut *mut RTreeNodeH, n: us
     if children.is_null() {
         return RTreeError::NullPointer;
     }
-    let children_vec = unsafe { Vec::from_raw_parts(children, n, n) };
-    for child in children_vec {
-        if !child.is_null() {
-            drop(unsafe { Box::from_raw(child as *mut NodeRef) });
-        }
-    }
+    drop(unsafe { Vec::from_raw_parts(children, n, n) });
     RTreeError::Success
 }
