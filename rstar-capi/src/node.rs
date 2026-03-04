@@ -70,7 +70,6 @@ pub extern "C" fn rtree_node_children(
         .into_iter()
         .map(|node_ref| Box::into_raw(Box::new(node_ref)) as *mut RTreeNodeH)
         .collect();
-    child_ptrs.shrink_to_fit();
 
     unsafe {
         *nchildren = child_ptrs.len();
