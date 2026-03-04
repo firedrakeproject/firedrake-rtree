@@ -103,12 +103,12 @@ pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTre
 }
 
 /// Writes the lower and upper corners of the AABB into `min_out` and `max_out`.
-fn write_aabb<const N: usize>(aabb: AABB<[f64; N]>, min_out: *mut f64, max_out: *mut f64) {
+fn write_aabb<const DIM: usize>(aabb: AABB<[f64; DIM]>, min_out: *mut f64, max_out: *mut f64) {
     let lower = aabb.lower();
     let upper = aabb.upper();
     unsafe {
-        std::ptr::copy_nonoverlapping(lower.as_ptr(), min_out, N);
-        std::ptr::copy_nonoverlapping(upper.as_ptr(), max_out, N);
+        std::ptr::copy_nonoverlapping(lower.as_ptr(), min_out, DIM);
+        std::ptr::copy_nonoverlapping(upper.as_ptr(), max_out, DIM);
     }
 }
 
