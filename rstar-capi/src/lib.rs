@@ -1,6 +1,10 @@
 use rstar::primitives::{GeomWithData, Rectangle};
 use rstar::RTree;
 
+mod error;
+
+pub use error::RTreeError;
+
 type Object2D = GeomWithData<Rectangle<[f64; 2]>, usize>;
 type Object3D = GeomWithData<Rectangle<[f64; 3]>, usize>;
 
@@ -17,27 +21,29 @@ pub enum RTreeH {}
 pub extern "C" fn rtree_create(
     tree: *mut *mut RTreeH,
     dim: u32,
-) {
+) -> RTreeError {
     if tree.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
     let rtree = match dim {
         2 => RTreeDim::D2(RTree::new()),
         3 => RTreeDim::D3(RTree::new()),
-        _ => return, // Invalid dimension
+        _ => return RTreeError::InvalidDimension
     };
     unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
+    RTreeError::Success
 }
 
 
 #[no_mangle]
 pub extern "C" fn rtree_free(
     tree: *mut RTreeH,
-) {
+) -> RTreeError {
     if tree.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
     drop(unsafe { Box::from_raw(tree as *mut RTreeDim) });
+    RTreeError::Success
 }
 
 
@@ -52,12 +58,13 @@ fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
 pub extern "C" fn rtree_get_dimension(
     tree: *const RTreeH,
     dim: *mut u32,
-) {
+) -> RTreeError {
     if tree.is_null() || dim.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     unsafe { *dim = _rtree_get_dimension(rtree) };
+    RTreeError::Success
 }
 
 fn _rtree_bulk_load<const DIM: usize>(
@@ -89,18 +96,19 @@ pub extern "C" fn rtree_bulk_load(
     ids: *const usize,
     n: usize,
     dim: u32,
-) {
+) -> RTreeError {
     if tree.is_null() || mins.is_null() || maxs.is_null() || ids.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
 
     let rtree = match dim {
         2 => RTreeDim::D2(_rtree_bulk_load::<2>(mins, maxs, ids, n)),
         3 => RTreeDim::D3(_rtree_bulk_load::<3>(mins, maxs, ids, n)),
-        _ => return, // Invalid dimension
+        _ => return RTreeError::InvalidDimension
     };
 
     unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
+    RTreeError::Success
 }
 
 
@@ -110,9 +118,9 @@ pub extern "C" fn rtree_locate_all_at_point(
     point: *const f64,
     ids_out: *mut *mut usize,
     nids_out: *mut usize,
-) {
+) -> RTreeError {
     if tree.is_null() || point.is_null() || ids_out.is_null() || nids_out.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let mut ids: Vec<usize> = match rtree {
@@ -134,6 +142,7 @@ pub extern "C" fn rtree_locate_all_at_point(
         *nids_out = n;
         *ids_out = ptr;
     }
+    RTreeError::Success
 }
 
 
@@ -141,9 +150,10 @@ pub extern "C" fn rtree_locate_all_at_point(
 pub extern "C" fn rtree_free_ids(
     ids: *mut usize,
     n: usize,
-) {
+) -> RTreeError {
     if ids.is_null() {
-        return;
+        return RTreeError::NullPointer;
     }
     unsafe { drop(Vec::from_raw_parts(ids, n, n)) };
+    RTreeError::Success
 }
