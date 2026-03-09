@@ -31,7 +31,7 @@ fn c_api() {
             test_src.to_str().unwrap(),
         ])
         .status()
-        .expect("Failed to call gcc");
+        .expect("Failed to compile");
 
     assert!(
         compile_status.success(),

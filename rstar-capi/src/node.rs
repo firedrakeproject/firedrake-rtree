@@ -103,7 +103,9 @@ pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTre
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let node_id = match node_ref {
-        NodeRef::Parent1D(_) | NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => return RTreeError::NodeNotLeaf,
+        NodeRef::Parent1D(_) | NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => {
+            return RTreeError::NodeNotLeaf
+        }
         NodeRef::Node1D(ptr) => match unsafe { &**ptr } {
             RTreeNode::Leaf(leaf) => leaf.data,
             RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
