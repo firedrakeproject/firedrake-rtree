@@ -1,11 +1,13 @@
 use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
 
 use crate::error::RTreeError;
-use crate::{Object2D, Object3D, RTreeDim, RTreeH};
+use crate::{Object1D, Object2D, Object3D, RTreeDim, RTreeH};
 
 enum NodeRef {
+    Parent1D(*const ParentNode<Object1D>),
     Parent2D(*const ParentNode<Object2D>),
     Parent3D(*const ParentNode<Object3D>),
+    Node1D(*const RTreeNode<Object1D>),
     Node2D(*const RTreeNode<Object2D>),
     Node3D(*const RTreeNode<Object3D>),
 }
@@ -19,6 +21,7 @@ pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNode
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let node_ref = match rtree {
+        RTreeDim::D1(tree) => NodeRef::Parent1D(tree.root() as *const _),
         RTreeDim::D2(tree) => NodeRef::Parent2D(tree.root() as *const _),
         RTreeDim::D3(tree) => NodeRef::Parent3D(tree.root() as *const _),
     };
@@ -38,6 +41,11 @@ pub extern "C" fn rtree_node_children(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let child_node_refs: Vec<NodeRef> = match node_ref {
+        NodeRef::Parent1D(ptr) => unsafe { &**ptr }
+            .children()
+            .iter()
+            .map(|child| NodeRef::Node1D(child as *const _))
+            .collect(),
         NodeRef::Parent2D(ptr) => unsafe { &**ptr }
             .children()
             .iter()
@@ -48,6 +56,14 @@ pub extern "C" fn rtree_node_children(
             .iter()
             .map(|child| NodeRef::Node3D(child as *const _))
             .collect(),
+        NodeRef::Node1D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(_) => Vec::new(),
+            RTreeNode::Parent(parent) => parent
+                .children()
+                .iter()
+                .map(|child| NodeRef::Node1D(child as *const _))
+                .collect(),
+        },
         NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
             RTreeNode::Leaf(_) => Vec::new(),
             RTreeNode::Parent(parent) => parent
@@ -87,7 +103,11 @@ pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTre
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let node_id = match node_ref {
-        NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => return RTreeError::NodeNotLeaf,
+        NodeRef::Parent1D(_) | NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => return RTreeError::NodeNotLeaf,
+        NodeRef::Node1D(ptr) => match unsafe { &**ptr } {
+            RTreeNode::Leaf(leaf) => leaf.data,
+            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
+        },
         NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
             RTreeNode::Leaf(leaf) => leaf.data,
             RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
@@ -124,8 +144,10 @@ pub extern "C" fn rtree_node_envelope(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     match node_ref {
+        NodeRef::Parent1D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Parent2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Parent3D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
+        NodeRef::Node1D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Node2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Node3D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
     };
