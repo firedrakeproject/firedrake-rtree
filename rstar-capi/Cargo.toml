@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rstar = { path = "../rstar"}
+rstar = "0.12.2"
+
 
 [build-dependencies]
 cbindgen = "0.29"
