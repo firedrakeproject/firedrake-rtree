@@ -20,7 +20,7 @@ pub struct NodeInterval {
 
 // This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
 fn build_node(intervals: Vec<(f64, f64, usize)>) -> NodeInterval {
-    assert!(!intervals.is_empty());
+    assert!(!intervals.is_empty(), "Cannot build an interval tree node from an empty list of intervals");
     let min = intervals.iter().map(|i| i.0).fold(f64::INFINITY, f64::min);
     let max = intervals.iter().map(|i| i.1).fold(f64::NEG_INFINITY, f64::max);
     let center = (min + max) / 2.0;
@@ -64,6 +64,34 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> NodeInterval {
     }
 }
 
+
+pub struct IntervalTree {
+    root: Option<NodeInterval>,
+    size: usize,
+}
+
+
+impl IntervalTree {
+    pub fn bulk_load(
+        mins: &[f64],
+        maxs: &[f64],
+        ids: &[usize],
+    ) -> Self {
+        let n = mins.len();
+        assert!(
+            n == maxs.len() && n == ids.len(),
+            "Inputs must have the same length"
+        );
+        if n == 0 {
+            return Self { root: None, size: 0 };
+        }
+        let elements: Vec<(f64, f64, usize)> = (0..n).map(|i| (mins[i], maxs[i], ids[i])).collect();
+        Self {
+            root: Some(build_node(elements)),
+            size: n,
+        }
+    }
+}
 
 #[test]
 fn test_interval_contains() {
@@ -116,4 +144,33 @@ fn test_build_node() {
         (0.5, 1.5, 1),
         (1.0, 2.0, 2),
     ]);
+}
+
+#[test]
+fn test_interval_tree_bulk_load() {
+    let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
+    let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size, 5);
+    let root = tree.root.as_ref().unwrap();
+    assert_eq!(root.center, 0.0);
+    let left_node = root.left.as_ref().unwrap();
+    assert_eq!(left_node.center, -1.5);
+    assert_eq!(left_node.left, None);
+    assert_eq!(left_node.right, None);
+    let right_node = root.right.as_ref().unwrap();
+    assert_eq!(right_node.center, 1.25);
+    assert_eq!(right_node.left, None);
+    assert_eq!(right_node.right, None);
+}
+
+#[test]
+fn test_interval_tree_empty_bulk_load() {
+    let mins = vec![];
+    let maxs = vec![];
+    let ids = vec![];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size, 0);
+    assert_eq!(tree.root, None);
 }
