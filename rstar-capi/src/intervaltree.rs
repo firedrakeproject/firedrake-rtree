@@ -1,14 +1,3 @@
-pub struct Interval {
-    pub min: f64,
-    pub max: f64,
-}
-
-impl Interval {
-    fn contains(&self, p: f64) -> bool {
-        self.min <= p && p <= self.max
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub struct NodeInterval {
     pub center: f64,
@@ -91,16 +80,47 @@ impl IntervalTree {
             size: n,
         }
     }
-}
 
-#[test]
-fn test_interval_contains() {
-    let interval = Interval { min: 0.0, max: 1.0 };
-    assert!(interval.contains(0.5));
-    assert!(interval.contains(0.0));
-    assert!(interval.contains(1.0));
-    assert!(!interval.contains(-0.1));
-    assert!(!interval.contains(1.1));
+    pub fn locate_all_at_point(&self, p: f64) -> Vec<usize> {
+        // Pre-order traversal of the interval tree
+        let mut result = Vec::new();
+        if self.root.is_none() {
+            return result;
+        }
+        let mut stack = Vec::new();
+        if let Some(root) = &self.root {
+            stack.push(root);
+        }
+        while stack.len() > 0 {
+            let node = stack.pop().unwrap();
+            if p < node.center {
+                if let Some(left) = &node.left {
+                    stack.push(left);
+                }
+                for interval in &node.overlapping_by_min {
+                    if p < interval.0 {
+                        break;
+                    }
+                    else {
+                        result.push(interval.2);
+                    }
+                }
+            } else {
+                if let Some(right) = &node.right {
+                    stack.push(right);
+                }
+                for interval in &node.overlapping_by_max {
+                    if p > interval.1 {
+                        break;
+                    }
+                    else {
+                        result.push(interval.2);
+                    }
+                }
+            }
+        }
+        result
+    }
 }
 
 #[test]
@@ -173,4 +193,34 @@ fn test_interval_tree_empty_bulk_load() {
     let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
     assert_eq!(tree.size, 0);
     assert_eq!(tree.root, None);
+}
+
+#[test]
+fn test_interval_tree_locate_all_at_point() {
+    let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
+    let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let result = tree.locate_all_at_point(0.25);
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&0));
+    assert!(result.contains(&3));
+    // let result = tree.locate_all_at_point(0.75);
+    // assert_eq!(result.len(), 2);
+    // assert!(result.contains(&0));
+    // assert!(result.contains(&1));
+    let result = tree.locate_all_at_point(0.5);
+    assert_eq!(result.len(), 3);
+    assert!(result.contains(&0));
+    assert!(result.contains(&1));
+    assert!(result.contains(&3));
+    let result = tree.locate_all_at_point(1.25);
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&1));
+    assert!(result.contains(&2));
+    let result = tree.locate_all_at_point(-1.5);
+    assert_eq!(result.len(), 1);
+    assert!(result.contains(&4));
+    let result = tree.locate_all_at_point(2.5);
+    assert_eq!(result.len(), 0);
 }
