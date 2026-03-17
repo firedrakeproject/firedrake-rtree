@@ -3,12 +3,10 @@ use rstar::RTree;
 
 use crate::error::RTreeError;
 
-pub type Object1D = GeomWithData<Rectangle<[f64; 1]>, usize>;
 pub type Object2D = GeomWithData<Rectangle<[f64; 2]>, usize>;
 pub type Object3D = GeomWithData<Rectangle<[f64; 3]>, usize>;
 
 pub enum RTreeDim {
-    D1(RTree<Object1D>),
     D2(RTree<Object2D>),
     D3(RTree<Object3D>),
 }
@@ -22,7 +20,6 @@ pub extern "C" fn rtree_create(tree: *mut *mut RTreeH, dim: u32) -> RTreeError {
         return RTreeError::NullPointer;
     }
     let rtree = match dim {
-        1 => RTreeDim::D1(RTree::new()),
         2 => RTreeDim::D2(RTree::new()),
         3 => RTreeDim::D3(RTree::new()),
         _ => return RTreeError::InvalidDimension,
@@ -42,7 +39,6 @@ pub extern "C" fn rtree_free(tree: *mut RTreeH) -> RTreeError {
 
 fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
     match tree {
-        RTreeDim::D1(_) => 1,
         RTreeDim::D2(_) => 2,
         RTreeDim::D3(_) => 3,
     }
@@ -93,7 +89,6 @@ pub extern "C" fn rtree_bulk_load(
     }
 
     let rtree = match dim {
-        1 => RTreeDim::D1(_rtree_bulk_load::<1>(mins, maxs, ids, n)),
         2 => RTreeDim::D2(_rtree_bulk_load::<2>(mins, maxs, ids, n)),
         3 => RTreeDim::D3(_rtree_bulk_load::<3>(mins, maxs, ids, n)),
         _ => return RTreeError::InvalidDimension,
@@ -115,10 +110,6 @@ pub extern "C" fn rtree_locate_all_at_point(
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let mut ids: Vec<usize> = match rtree {
-        RTreeDim::D1(tree) => {
-            let p: [f64; 1] = unsafe { *(point as *const [f64; 1]) };
-            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
-        }
         RTreeDim::D2(tree) => {
             let p: [f64; 2] = unsafe { *(point as *const [f64; 2]) };
             tree.locate_all_at_point(p).map(|obj| obj.data).collect()
