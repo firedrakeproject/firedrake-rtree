@@ -1,7 +1,7 @@
 use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
 
 use crate::error::RTreeError;
-use crate::rtree::{Object1D, Object2D, Object3D, RTreeDim, RTreeH};
+use crate::rtree::{Object2D, Object3D, RTreeDim, RTreeH};
 
 enum NodeRef {
     Parent2D(*const ParentNode<Object2D>),

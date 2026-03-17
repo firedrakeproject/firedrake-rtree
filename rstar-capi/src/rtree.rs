@@ -112,11 +112,11 @@ pub extern "C" fn rtree_locate_all_at_point(
     let mut ids: Vec<usize> = match rtree {
         RTreeDim::D2(tree) => {
             let p: [f64; 2] = unsafe { *(point as *const [f64; 2]) };
-            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
+            tree.locate_all_at_point(&p).map(|obj| obj.data).collect()
         }
         RTreeDim::D3(tree) => {
             let p: [f64; 3] = unsafe { *(point as *const [f64; 3]) };
-            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
+            tree.locate_all_at_point(&p).map(|obj| obj.data).collect()
         }
     };
 
