@@ -11,9 +11,15 @@ pub struct IntervalTreeNode {
 
 // This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
 fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
-    assert!(!intervals.is_empty(), "Cannot build an interval tree node from an empty list of intervals");
+    assert!(
+        !intervals.is_empty(),
+        "Cannot build an interval tree node from an empty list of intervals"
+    );
     let min = intervals.iter().map(|i| i.0).fold(f64::INFINITY, f64::min);
-    let max = intervals.iter().map(|i| i.1).fold(f64::NEG_INFINITY, f64::max);
+    let max = intervals
+        .iter()
+        .map(|i| i.1)
+        .fold(f64::NEG_INFINITY, f64::max);
     let center = (min + max) / 2.0;
 
     let mut s_left = Vec::new();
@@ -55,26 +61,23 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
     }
 }
 
-
 pub struct IntervalTree {
     root: Option<IntervalTreeNode>,
     size: usize,
 }
 
-
 impl IntervalTree {
-    pub fn bulk_load(
-        mins: &[f64],
-        maxs: &[f64],
-        ids: &[usize],
-    ) -> Self {
+    pub fn bulk_load(mins: &[f64], maxs: &[f64], ids: &[usize]) -> Self {
         let n = mins.len();
         assert!(
             n == maxs.len() && n == ids.len(),
             "Inputs must have the same length"
         );
         if n == 0 {
-            return Self { root: None, size: 0 };
+            return Self {
+                root: None,
+                size: 0,
+            };
         }
         let elements: Vec<(f64, f64, usize)> = (0..n).map(|i| (mins[i], maxs[i], ids[i])).collect();
         Self {
@@ -101,8 +104,7 @@ impl IntervalTree {
                 for interval in &node.overlapping_by_min {
                     if p < interval.0 {
                         continue;
-                    }
-                    else {
+                    } else {
                         result.push(interval.2);
                     }
                 }
@@ -113,8 +115,7 @@ impl IntervalTree {
                 for interval in &node.overlapping_by_max {
                     if p > interval.1 {
                         continue;
-                    }
-                    else {
+                    } else {
                         result.push(interval.2);
                     }
                 }
@@ -139,36 +140,32 @@ fn test_build_node() {
     ];
     let node = build_node(intervals);
     assert_eq!(node.center, 0.0);
-    assert_eq!(node.overlapping_by_min, vec![
-        (-1.0, 0.5, 3),
-        (0.0, 1.0, 0),
-    ]);
-    assert_eq!(node.overlapping_by_max, vec![
-        (-1.0, 0.5, 3),
-        (0.0, 1.0, 0),
-    ]);
+    assert_eq!(
+        node.overlapping_by_min,
+        vec![(-1.0, 0.5, 3), (0.0, 1.0, 0),]
+    );
+    assert_eq!(
+        node.overlapping_by_max,
+        vec![(-1.0, 0.5, 3), (0.0, 1.0, 0),]
+    );
     let left_node = node.left.as_ref().unwrap();
     assert_eq!(left_node.left, None);
     assert_eq!(left_node.right, None);
     assert_eq!(left_node.center, -1.5);
-    assert_eq!(left_node.overlapping_by_min, vec![
-        (-2.0, -1.0, 4),
-    ]);
-    assert_eq!(left_node.overlapping_by_max, vec![
-        (-2.0, -1.0, 4),
-    ]);
+    assert_eq!(left_node.overlapping_by_min, vec![(-2.0, -1.0, 4),]);
+    assert_eq!(left_node.overlapping_by_max, vec![(-2.0, -1.0, 4),]);
     let right_node = node.right.as_ref().unwrap();
     assert_eq!(right_node.left, None);
     assert_eq!(right_node.right, None);
     assert_eq!(right_node.center, 1.25);
-    assert_eq!(right_node.overlapping_by_min, vec![
-        (0.5, 1.5, 1),
-        (1.0, 2.0, 2),
-    ]);
-    assert_eq!(right_node.overlapping_by_max, vec![
-        (0.5, 1.5, 1),
-        (1.0, 2.0, 2),
-    ]);
+    assert_eq!(
+        right_node.overlapping_by_min,
+        vec![(0.5, 1.5, 1), (1.0, 2.0, 2),]
+    );
+    assert_eq!(
+        right_node.overlapping_by_max,
+        vec![(0.5, 1.5, 1), (1.0, 2.0, 2),]
+    );
 }
 
 #[test]
