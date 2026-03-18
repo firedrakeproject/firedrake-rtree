@@ -25,6 +25,10 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
         .iter()
         .map(|i| i.1)
         .fold(f64::NEG_INFINITY, f64::max);
+    assert!(
+        min.is_finite() && max.is_finite(),
+        "Interval endpoints must be finite"
+    );
     let center = f64::midpoint(min, max);
 
     let mut s_left = Vec::new();
@@ -32,9 +36,17 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
     let mut s_center = Vec::new();
 
     for interval in intervals {
-        if interval.1 < center {
+        let left = interval.0;
+        let right = interval.1;
+        assert!(
+            left <= right,
+            "Invalid interval with min > max: ({}, {})",
+            left,
+            right
+        );
+        if right < center {
             s_left.push(interval);
-        } else if interval.0 > center {
+        } else if left > center {
             s_right.push(interval);
         } else {
             s_center.push(interval);
@@ -66,6 +78,7 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct IntervalTree {
     root: Option<IntervalTreeNode>,
     size: usize,
@@ -281,8 +294,81 @@ fn test_interval_tree_locate_all_at_point_single_interval() {
     assert!(result.contains(&0));
     let result = tree.locate_all_at_point(-0.5);
     assert_eq!(result.len(), 0);
+    let result = tree.locate_all_at_point(1.5);
+    assert_eq!(result.len(), 0);
+    let result = tree.locate_all_at_point(0.0);
+    assert_eq!(result.len(), 1);
+    assert!(result.contains(&0));
+    let result = tree.locate_all_at_point(1.0);
+    assert_eq!(result.len(), 1);
+    assert!(result.contains(&0));
     let root_node = tree.root().unwrap();
     assert_eq!(root_node.center, 0.5);
     assert_eq!(root_node.left, None);
     assert_eq!(root_node.right, None);
+}
+
+#[test]
+fn test_interval_tree_degenerate_intervals() {
+    let mins = vec![0.0, 0.0, 0.0, 0.0, 0.0];
+    let maxs = vec![1.0, 1.0, 1.0, 1.0, 1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size(), 5);
+    let root = tree.root().unwrap();
+    assert_eq!(root.center, 0.5);
+    assert_eq!(root.left, None);
+    assert_eq!(root.right, None);
+    let result = tree.locate_all_at_point(0.5);
+    assert_eq!(result.len(), 5);
+    assert!(result.contains(&0));
+    assert!(result.contains(&1));
+    assert!(result.contains(&2));
+    assert!(result.contains(&3));
+    assert!(result.contains(&4));
+    let result = tree.locate_all_at_point(0.0);
+    assert_eq!(result.len(), 5);
+    let result = tree.locate_all_at_point(1.0);
+    assert_eq!(result.len(), 5);
+    let result = tree.locate_all_at_point(-0.5);
+    assert_eq!(result.len(), 0);
+    let result = tree.locate_all_at_point(1.5);
+    assert_eq!(result.len(), 0);
+}
+
+#[test]
+fn test_interval_tree_invalid_interval() {
+    let mins = vec![0.0, 1.0];
+    let maxs = vec![1.0, 0.0];
+    let ids = vec![0, 1];
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with min > max");
+}
+
+#[test]
+fn test_interval_tree_nan() {
+    let mins = vec![0.0, 2.0];
+    let maxs = vec![1.0, f64::NAN];
+    let ids = vec![0, 1];
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with min > max");
+}
+
+#[test]
+fn test_interval_tree_infinite() {
+    let mins = vec![f64::NEG_INFINITY, 1.0, f64::NEG_INFINITY];
+    let maxs = vec![1.0, f64::INFINITY, f64::INFINITY];
+    let ids = vec![0, 1, 2];
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with infinite endpoints");
+}
+
+#[test]
+fn test_interval_tree_duplicate_ids() {
+    let mins = vec![0.0, 0.5, 0.0, 0.0];
+    let maxs = vec![1.0, 1.5, 2.0, 1.0];
+    let ids = vec![0, 1, 1, 0];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size(), 4);
+    let result = tree.locate_all_at_point(0.75);
+    assert_eq!(result.len(), 4);
+    assert!(result.contains(&0));
+    assert!(result.contains(&1));
 }
