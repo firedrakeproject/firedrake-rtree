@@ -142,11 +142,58 @@ bool test_nodes(void) {
         rtree_free(tree);
         return false;
     }
-    struct RTreeNodeH **children = NULL;
+
+    double root_min[2];
+    double root_max[2];
+    rtree_node_envelope(root, root_min, root_max);
+    if (root_min[0] != 0.0 || root_min[1] != 0.0 || root_max[0] != 3.0 || root_max[1] != 3.0) {
+        fprintf(stderr, "Expected root envelope to be [0, 0], [3, 3], got [%f, %f], [%f, %f]\n",
+            root_min[0], root_min[1], root_max[0], root_max[1]);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    RTreeNodeH **children = NULL;
     size_t nchildren = 0;
     rtree_node_children(root, &children, &nchildren);
     if (nchildren != 2) {
         fprintf(stderr, "Expected root to have 2 children, got %zu\n", nchildren);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    double child1_min[2];
+    double child1_max[2];
+    rtree_node_envelope(children[0], child1_min, child1_max);
+    if (child1_min[0] != 0.0 || child1_min[1] != 0.0 || child1_max[0] != 2.0 || child1_max[1] != 2.0) {
+        fprintf(stderr, "Expected child1 envelope to be [0, 0], [2, 2], got [%f, %f], [%f, %f]\n",
+            child1_min[0], child1_min[1], child1_max[0], child1_max[1]);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    double child2_min[2];
+    double child2_max[2];
+    rtree_node_envelope(children[1], child2_min, child2_max);
+    if (child2_min[0] != 1.0 || child2_min[1] != 1.0 || child2_max[0] != 3.0 || child2_max[1] != 3.0) {
+        fprintf(stderr, "Expected child2 envelope to be [1, 1], [3, 3], got [%f, %f], [%f, %f]\n",
+            child2_min[0], child2_min[1], child2_max[0], child2_max[1]);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    RTreeNodeH **child1children = NULL;
+    size_t nchild1children = 0;
+    rtree_node_children(children[0], &child1children, &nchild1children);
+    if (nchild1children != 0) {
+        fprintf(stderr, "Expected child1 to have 0 children, got %zu\n", nchild1children);
+        rtree_node_children_free(child1children, nchild1children);
         rtree_node_children_free(children, nchildren);
         rtree_node_free(root);
         rtree_free(tree);
@@ -267,6 +314,18 @@ bool test_rtree_node_1d(void) {
         rtree_free(tree);
         return false;
     }
+
+    double root_min[1];
+    double root_max[1];
+    rtree_node_envelope(root, root_min, root_max);
+    if (root_min[0] != -2.0 || root_max[0] != 2.0) {
+        fprintf(stderr, "Expected root envelope to be [-2], [2], got [%f], [%f]\n",
+            root_min[0], root_max[0]);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
     struct RTreeNodeH **children = NULL;
     size_t nchildren = 0;
     rtree_node_children(root, &children, &nchildren);
@@ -277,6 +336,46 @@ bool test_rtree_node_1d(void) {
         rtree_free(tree);
         return false;
     }
+
+    double child1_min[1];
+    double child1_max[1];
+    rtree_node_envelope(children[0], child1_min, child1_max);
+    if (child1_min[0] != -2.0 || child1_max[0] != -1.0) {
+        fprintf(stderr, "Expected child1 envelope to be [-2], [-1], got [%f], [%f]\n",
+            child1_min[0], child1_max[0]);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    double child2_min[1];
+    double child2_max[1];
+    rtree_node_envelope(children[1], child2_min, child2_max);
+    if (child2_min[0] != 0.5 || child2_max[0] != 2.0) {
+        fprintf(stderr, "Expected child2 envelope to be [0.5], [2], got [%f], [%f]\n",
+            child2_min[0], child2_max[0]);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    RTreeNodeH **child1children = NULL;
+    size_t nchild1children = 0;
+    rtree_node_children(children[0], &child1children, &nchild1children);
+    if (nchild1children != 0) {
+        fprintf(stderr, "Expected child1 to have 0 children, got %zu\n", nchild1children);
+        rtree_node_children_free(child1children, nchild1children);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    rtree_node_children_free(children, nchildren);
+    rtree_node_free(root);
+    rtree_free(tree);
     return true;
 }
 
