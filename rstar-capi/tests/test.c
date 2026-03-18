@@ -285,6 +285,36 @@ bool test_rtree_1d(void) {
     return true;
 }
 
+bool test_rtree_node_1d(void) {
+    const size_t N = 5;
+    const uint32_t dim = 1;
+    double mins[5] = {0.0, 0.5, 1.0, -1.0, -2.0};
+    double maxs[5] = {1.0, 1.5, 2.0, 0.5, -1.0};
+    size_t ids[5] = {0, 1, 2, 3, 4};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        return false;
+    }
+    RTreeNodeH *root = NULL;
+    rtree_root_node(tree, &root);
+    if (root == NULL) {
+        rtree_free(tree);
+        return false;
+    }
+    struct RTreeNodeH **children = NULL;
+    size_t nchildren = 0;
+    rtree_node_children(root, &children, &nchildren);
+    if (nchildren != 2) {
+        fprintf(stderr, "Expected root to have 2 children, got %zu\n", nchildren);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    return true;
+}
+
 void run_test(
     bool (test)(void),
     const char *test_name,
@@ -308,6 +338,7 @@ int main(void) {
     run_test(test_nodes, "test_nodes", &passed);
     run_test(test_root_node_id, "test_root_node_id", &passed);
     run_test(test_rtree_1d, "test_rtree_1d", &passed);
+    run_test(test_rtree_node_1d, "test_rtree_node_1d", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
