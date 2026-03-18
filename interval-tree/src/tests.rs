@@ -1,5 +1,8 @@
 use super::*;
 
+use rand::rngs::SmallRng;
+use rand::{RngExt, SeedableRng};
+
 #[test]
 fn test_build_node() {
     let intervals = vec![
@@ -200,7 +203,7 @@ fn test_interval_tree_nan() {
     let mins = vec![0.0, 2.0];
     let maxs = vec![1.0, f64::NAN];
     let ids = vec![0, 1];
-    let _ =IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let _ = IntervalTree::bulk_load(&mins, &maxs, &ids);
 }
 
 #[test]
@@ -223,4 +226,27 @@ fn test_interval_tree_duplicate_ids() {
     assert_eq!(result.len(), 4);
     assert!(result.contains(&0));
     assert!(result.contains(&1));
+}
+
+#[test]
+fn test_interval_tree_large_nonoverlapping() {
+    let n = 1_000_000;
+    let mins: Vec<f64> = (0..n).map(|i| i as f64 * 2.0).collect();
+    let maxs: Vec<f64> = (0..n).map(|i| i as f64 * 2.0 + 1.0).collect();
+    let ids: Vec<usize> = (0..n).collect();
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size(), n);
+
+    let mut rng = SmallRng::seed_from_u64(0);
+    for _ in 0..1_000_000 {
+        let p: f64 = rng.random_range(0.0..200_000.0);
+        let result = tree.locate_all_at_point(p);
+        assert!(result.len() <= 1);
+
+        if let Some(&id) = result.first() {
+            let expected_min = id as f64 * 2.0;
+            let expected_max = id as f64 * 2.0 + 1.0;
+            assert!(p >= expected_min && p <= expected_max);
+        }
+    }
 }
