@@ -99,7 +99,7 @@ impl IntervalTree {
                 }
                 for interval in &node.overlapping_by_min {
                     if p < interval.0 {
-                        break;
+                        continue;
                     }
                     else {
                         result.push(interval.2);
@@ -111,7 +111,7 @@ impl IntervalTree {
                 }
                 for interval in &node.overlapping_by_max {
                     if p > interval.1 {
-                        break;
+                        continue;
                     }
                     else {
                         result.push(interval.2);
@@ -205,10 +205,10 @@ fn test_interval_tree_locate_all_at_point() {
     assert_eq!(result.len(), 2);
     assert!(result.contains(&0));
     assert!(result.contains(&3));
-    // let result = tree.locate_all_at_point(0.75);
-    // assert_eq!(result.len(), 2);
-    // assert!(result.contains(&0));
-    // assert!(result.contains(&1));
+    let result = tree.locate_all_at_point(0.75);
+    assert_eq!(result.len(), 2);
+    assert!(result.contains(&0));
+    assert!(result.contains(&1));
     let result = tree.locate_all_at_point(0.5);
     assert_eq!(result.len(), 3);
     assert!(result.contains(&0));
