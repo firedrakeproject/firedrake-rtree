@@ -9,7 +9,6 @@ enum RTreeError {
   Success = 0,
   NullPointer = 1,
   InvalidDimension = 2,
-  NodeNotLeaf = 3,
 };
 typedef uint16_t RTreeError;
 
@@ -46,7 +45,5 @@ RTreeError rtree_node_children_free(struct RTreeNodeH **children, size_t n);
 RTreeError rtree_node_envelope(const struct RTreeNodeH *node, double *min_out, double *max_out);
 
 RTreeError rtree_node_free(struct RTreeNodeH *node);
-
-RTreeError rtree_node_id(const struct RTreeNodeH *node, size_t *id);
 
 RTreeError rtree_root_node(const struct RTreeH *tree, struct RTreeNodeH **node);

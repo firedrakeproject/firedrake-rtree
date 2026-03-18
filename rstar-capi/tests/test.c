@@ -153,28 +153,6 @@ bool test_nodes(void) {
         return false;
     }
 
-    // Get id of first child, which is a leaf node
-    size_t child_id = 0;
-    rtree_node_id(children[0], &child_id);
-    if (child_id != 1) {
-        fprintf(stderr, "Expected child id to be 1, got %zu\n", child_id);
-        rtree_node_children_free(children, nchildren);
-        rtree_node_free(root);
-        rtree_free(tree);
-        return false;
-    }
-
-    // Get id of second child, which is a leaf node
-    size_t child_id2 = 0;
-    rtree_node_id(children[1], &child_id2);
-    if (child_id2 != 2) {
-        fprintf(stderr, "Expected child id to be 2, got %zu\n", child_id2);
-        rtree_node_children_free(children, nchildren);
-        rtree_node_free(root);
-        rtree_free(tree);
-        return false;
-    }
-
     rtree_node_children_free(children, nchildren);
     rtree_node_free(root);
     rtree_free(tree);
@@ -200,20 +178,7 @@ bool test_root_node_id(void) {
         rtree_free(tree);
         return false;
     }
-
-    size_t root_id = 0;
-    RTreeError err = rtree_node_id(root, &root_id);
-    // Root node should not have an id, so expect NodeNotLeaf error
-    if (err == NodeNotLeaf) {
-        rtree_node_free(root);
-        rtree_free(tree);
-        return true;
-    } else {
-        fprintf(stderr, "Expected NodeNotLeaf error");
-        rtree_node_free(root);
-        rtree_free(tree);
-        return false;
-    }
+    return true;
 }
 
 bool test_rtree_1d(void) {

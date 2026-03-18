@@ -93,32 +93,6 @@ pub extern "C" fn rtree_node_children(
     RTreeError::Success
 }
 
-#[no_mangle]
-pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTreeError {
-    if node.is_null() || id.is_null() {
-        return RTreeError::NullPointer;
-    }
-    let node_ref = unsafe { &*(node as *const NodeRef) };
-
-    let node_id = match node_ref {
-        NodeRef::ITreeNode(_) => return RTreeError::NodeNotLeaf,
-        NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => {
-            return RTreeError::NodeNotLeaf
-        }
-        NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
-            RTreeNode::Leaf(leaf) => leaf.data,
-            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
-        },
-        NodeRef::Node3D(ptr) => match unsafe { &**ptr } {
-            RTreeNode::Leaf(leaf) => leaf.data,
-            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
-        },
-    };
-
-    unsafe { *id = node_id };
-    RTreeError::Success
-}
-
 /// Writes the lower and upper corners of the AABB into `min_out` and `max_out`.
 fn write_aabb<const DIM: usize>(aabb: AABB<[f64; DIM]>, min_out: *mut f64, max_out: *mut f64) {
     let lower = aabb.lower();
