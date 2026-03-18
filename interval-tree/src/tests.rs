@@ -256,3 +256,20 @@ fn test_interval_tree_large_nonoverlapping() {
         }
     }
 }
+
+#[test]
+fn test_interval_tree_node_envelope() {
+    let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
+    let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let root = tree.root().unwrap();
+    assert_eq!(root.min, -2.0);
+    assert_eq!(root.max, 2.0);
+    let left_node = root.left.as_ref().unwrap();
+    assert_eq!(left_node.min, -2.0);
+    assert_eq!(left_node.max, -1.0);
+    let right_node = root.right.as_ref().unwrap();
+    assert_eq!(right_node.min, 0.5);
+    assert_eq!(right_node.max, 2.0);
+}
