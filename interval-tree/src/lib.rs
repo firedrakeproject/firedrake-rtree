@@ -9,8 +9,13 @@ pub struct IntervalTreeNode {
     pub overlapping_by_max: Vec<(f64, f64, usize)>,
 }
 
-// This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
+/// Builds an interval tree node from a list of intervals. Each interval is represented as a tuple of (min, max, id).
+///
+/// # Panics
+///
+/// Panics if the input list of intervals is empty.
 fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
+    // This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
     assert!(
         !intervals.is_empty(),
         "Cannot build an interval tree node from an empty list of intervals"
@@ -67,6 +72,11 @@ pub struct IntervalTree {
 }
 
 impl IntervalTree {
+    /// Creates an interval tree from the given arrays of minimums, maximums, and ids. The lengths of the input arrays must be the same.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the input arrays have different lengths.
     #[must_use]
     pub fn bulk_load(mins: &[f64], maxs: &[f64], ids: &[usize]) -> Self {
         let n = mins.len();
@@ -87,6 +97,8 @@ impl IntervalTree {
         }
     }
 
+    /// Locates all intervals that contain the given point `p`. Returns a vector of the ids of the matching intervals.
+    /// Returns an empty vector if no intervals contain the point.
     #[must_use]
     pub fn locate_all_at_point(&self, p: f64) -> Vec<usize> {
         // Pre-order traversal of the interval tree
@@ -124,6 +136,7 @@ impl IntervalTree {
         result
     }
 
+    /// Returns the number of intervals in the tree.
     #[must_use]
     pub fn size(&self) -> usize {
         self.size
