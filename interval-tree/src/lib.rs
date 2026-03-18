@@ -93,8 +93,7 @@ impl IntervalTree {
         if let Some(root) = &self.root {
             stack.push(root);
         }
-        while stack.len() > 0 {
-            let node = stack.pop().unwrap();
+        while let Some(node) = stack.pop() {
             if p < node.center {
                 if let Some(left) = &node.left {
                     stack.push(left);
