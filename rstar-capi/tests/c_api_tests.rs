@@ -9,7 +9,12 @@ fn c_api() {
     let include_dir = manifest_dir.join("include");
     let test_src = manifest_dir.join("tests").join("test.c");
     let test_binary = lib_dir.join("test_c_api");
-
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    let build_status = Command::new(&cargo)
+        .args(["build", "--manifest-path", manifest_dir.join("Cargo.toml").to_str().unwrap()])
+        .status()
+        .expect("Failed to build cdylib");
+    assert!(build_status.success(), "cdylib build failed");
     let compile_status = Command::new("gcc")
         .args([
             "-Wall",
@@ -18,12 +23,12 @@ fn c_api() {
             "-g",
             "-I",
             include_dir.to_str().unwrap(),
+            test_src.to_str().unwrap(),
             "-L",
             lib_dir.to_str().unwrap(),
             "-lrstar_capi",
             "-o",
             test_binary.to_str().unwrap(),
-            test_src.to_str().unwrap(),
         ])
         .status()
         .expect("Failed to compile");
