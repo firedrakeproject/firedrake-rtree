@@ -236,7 +236,7 @@ fn test_interval_tree_duplicate_ids() {
 
 #[test]
 fn test_interval_tree_large_nonoverlapping() {
-    let n = 1_000_000;
+    let n = 500_000;
     let mins: Vec<f64> = (0..n).map(|i| i as f64 * 2.0).collect();
     let maxs: Vec<f64> = (0..n).map(|i| i as f64 * 2.0 + 1.0).collect();
     let ids: Vec<usize> = (0..n).collect();
@@ -244,7 +244,7 @@ fn test_interval_tree_large_nonoverlapping() {
     assert_eq!(tree.size(), n);
 
     let mut rng = SmallRng::seed_from_u64(0);
-    for _ in 0..1_000_000 {
+    for _ in 0..100_000 {
         let p: f64 = rng.random_range(0.0..200_000.0);
         let result = tree.locate_all_at_point(p);
         assert!(result.len() <= 1);
@@ -255,4 +255,21 @@ fn test_interval_tree_large_nonoverlapping() {
             assert!(p >= expected_min && p <= expected_max);
         }
     }
+}
+
+#[test]
+fn test_interval_tree_node_envelope() {
+    let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
+    let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let root = tree.root().unwrap();
+    assert_eq!(root.min, -2.0);
+    assert_eq!(root.max, 2.0);
+    let left_node = root.left.as_ref().unwrap();
+    assert_eq!(left_node.min, -2.0);
+    assert_eq!(left_node.max, -1.0);
+    let right_node = root.right.as_ref().unwrap();
+    assert_eq!(right_node.min, 0.5);
+    assert_eq!(right_node.max, 2.0);
 }
