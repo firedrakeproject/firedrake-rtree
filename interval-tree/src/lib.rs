@@ -3,6 +3,8 @@
 #[derive(Debug, PartialEq)]
 pub struct IntervalTreeNode {
     pub center: f64,
+    pub min: f64,
+    pub max: f64,
     pub left: Option<Box<IntervalTreeNode>>,
     pub right: Option<Box<IntervalTreeNode>>,
     pub overlapping_by_min: Vec<(f64, f64, usize)>,
@@ -69,6 +71,8 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
 
     IntervalTreeNode {
         center,
+        min,
+        max,
         left,
         right,
         overlapping_by_min,
