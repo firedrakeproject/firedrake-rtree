@@ -5,7 +5,7 @@ use std::process::Command;
 fn c_api() {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-    let lib_dir = manifest_dir.join("target").join("debug");
+    let lib_dir = manifest_dir.parent().unwrap().join("target").join("debug");
     let include_dir = manifest_dir.join("include");
     let test_src = manifest_dir.join("tests").join("test.c");
     let test_binary = lib_dir.join("test_c_api");
