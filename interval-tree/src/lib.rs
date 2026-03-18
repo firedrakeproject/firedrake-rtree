@@ -20,7 +20,7 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
         .iter()
         .map(|i| i.1)
         .fold(f64::NEG_INFINITY, f64::max);
-    let center = (min + max) / 2.0;
+    let center = f64::midpoint(min, max);
 
     let mut s_left = Vec::new();
     let mut s_right = Vec::new();
@@ -67,6 +67,7 @@ pub struct IntervalTree {
 }
 
 impl IntervalTree {
+    #[must_use]
     pub fn bulk_load(mins: &[f64], maxs: &[f64], ids: &[usize]) -> Self {
         let n = mins.len();
         assert!(
@@ -86,6 +87,7 @@ impl IntervalTree {
         }
     }
 
+    #[must_use]
     pub fn locate_all_at_point(&self, p: f64) -> Vec<usize> {
         // Pre-order traversal of the interval tree
         let mut result = Vec::new();
@@ -104,9 +106,8 @@ impl IntervalTree {
                 for interval in &node.overlapping_by_min {
                     if p < interval.0 {
                         continue;
-                    } else {
-                        result.push(interval.2);
                     }
+                    result.push(interval.2);
                 }
             } else {
                 if let Some(right) = &node.right {
@@ -115,15 +116,15 @@ impl IntervalTree {
                 for interval in &node.overlapping_by_max {
                     if p > interval.1 {
                         continue;
-                    } else {
-                        result.push(interval.2);
                     }
+                    result.push(interval.2);
                 }
             }
         }
         result
     }
 
+    #[must_use]
     pub fn size(&self) -> usize {
         self.size
     }
