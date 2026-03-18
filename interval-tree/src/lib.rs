@@ -40,9 +40,7 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
         let right = interval.1;
         assert!(
             left <= right,
-            "Invalid interval with min > max: ({}, {})",
-            left,
-            right
+            "Invalid interval with min > max: ({left}, {right})",
         );
         if right < center {
             s_left.push(interval);
@@ -341,7 +339,8 @@ fn test_interval_tree_invalid_interval() {
     let mins = vec![0.0, 1.0];
     let maxs = vec![1.0, 0.0];
     let ids = vec![0, 1];
-    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with min > max");
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids))
+        .expect_err("Expected panic due to invalid interval with min > max");
 }
 
 #[test]
@@ -349,7 +348,8 @@ fn test_interval_tree_nan() {
     let mins = vec![0.0, 2.0];
     let maxs = vec![1.0, f64::NAN];
     let ids = vec![0, 1];
-    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with min > max");
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids))
+        .expect_err("Expected panic due to invalid interval with min > max");
 }
 
 #[test]
@@ -357,7 +357,8 @@ fn test_interval_tree_infinite() {
     let mins = vec![f64::NEG_INFINITY, 1.0, f64::NEG_INFINITY];
     let maxs = vec![1.0, f64::INFINITY, f64::INFINITY];
     let ids = vec![0, 1, 2];
-    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids)).expect_err("Expected panic due to invalid interval with infinite endpoints");
+    std::panic::catch_unwind(|| IntervalTree::bulk_load(&mins, &maxs, &ids))
+        .expect_err("Expected panic due to invalid interval with infinite endpoints");
 }
 
 #[test]
