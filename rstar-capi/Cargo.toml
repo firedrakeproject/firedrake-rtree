@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 rstar = "0.12.2"
-
+interval-tree = { path = "../interval-tree" }
 
 [build-dependencies]
 cbindgen = "0.29"

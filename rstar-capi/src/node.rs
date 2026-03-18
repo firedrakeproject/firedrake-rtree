@@ -1,9 +1,11 @@
 use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
+use interval_tree::IntervalTreeNode;
 
 use crate::error::RTreeError;
 use crate::rtree::{Object2D, Object3D, RTreeDim, RTreeH};
 
 enum NodeRef {
+    ITreeNode(*const IntervalTreeNode),
     Parent2D(*const ParentNode<Object2D>),
     Parent3D(*const ParentNode<Object3D>),
     Node2D(*const RTreeNode<Object2D>),
@@ -19,6 +21,7 @@ pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNode
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let node_ref = match rtree {
+        RTreeDim::D1(tree) => NodeRef::ITreeNode(tree.root().unwrap()),
         RTreeDim::D2(tree) => NodeRef::Parent2D(tree.root() as *const _),
         RTreeDim::D3(tree) => NodeRef::Parent3D(tree.root() as *const _),
     };
@@ -38,6 +41,17 @@ pub extern "C" fn rtree_node_children(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let child_node_refs: Vec<NodeRef> = match node_ref {
+        NodeRef::ITreeNode(ptr) => {
+            let node = unsafe { &**ptr };
+            let mut children = Vec::new();
+            if let Some(left) = &node.left {
+                children.push(NodeRef::ITreeNode(left.as_ref() as *const _));
+            }
+            if let Some(right) = &node.right {
+                children.push(NodeRef::ITreeNode(right.as_ref() as *const _));
+            }
+            children
+        }
         NodeRef::Parent2D(ptr) => unsafe { &**ptr }
             .children()
             .iter()
@@ -79,31 +93,6 @@ pub extern "C" fn rtree_node_children(
     RTreeError::Success
 }
 
-#[no_mangle]
-pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTreeError {
-    if node.is_null() || id.is_null() {
-        return RTreeError::NullPointer;
-    }
-    let node_ref = unsafe { &*(node as *const NodeRef) };
-
-    let node_id = match node_ref {
-        NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => {
-            return RTreeError::NodeNotLeaf
-        }
-        NodeRef::Node2D(ptr) => match unsafe { &**ptr } {
-            RTreeNode::Leaf(leaf) => leaf.data,
-            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
-        },
-        NodeRef::Node3D(ptr) => match unsafe { &**ptr } {
-            RTreeNode::Leaf(leaf) => leaf.data,
-            RTreeNode::Parent(_) => return RTreeError::NodeNotLeaf,
-        },
-    };
-
-    unsafe { *id = node_id };
-    RTreeError::Success
-}
-
 /// Writes the lower and upper corners of the AABB into `min_out` and `max_out`.
 fn write_aabb<const DIM: usize>(aabb: AABB<[f64; DIM]>, min_out: *mut f64, max_out: *mut f64) {
     let lower = aabb.lower();
@@ -126,6 +115,15 @@ pub extern "C" fn rtree_node_envelope(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     match node_ref {
+        NodeRef::ITreeNode(ptr) => {
+            let node = unsafe { &**ptr };
+            let min = node.min;
+            let max = node.max;
+            unsafe {
+                *min_out = min;
+                *max_out = max;
+            }
+        },
         NodeRef::Parent2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Parent3D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Node2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
