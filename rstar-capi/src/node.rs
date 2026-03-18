@@ -1,11 +1,14 @@
 use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
+use interval_tree::IntervalTreeNode;
 
 use crate::error::RTreeError;
 use crate::rtree::{Object2D, Object3D, RTreeDim, RTreeH};
 
 enum NodeRef {
+    ITreeNode(*const IntervalTreeNode),
     Parent2D(*const ParentNode<Object2D>),
     Parent3D(*const ParentNode<Object3D>),
+    ITreeNodeLeaf(f64, f64, usize),
     Node2D(*const RTreeNode<Object2D>),
     Node3D(*const RTreeNode<Object3D>),
 }
@@ -19,6 +22,7 @@ pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNode
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let node_ref = match rtree {
+        RTreeDim::D1(tree) => NodeRef::ITreeNode(tree.root().unwrap()),
         RTreeDim::D2(tree) => NodeRef::Parent2D(tree.root() as *const _),
         RTreeDim::D3(tree) => NodeRef::Parent3D(tree.root() as *const _),
     };
@@ -38,6 +42,21 @@ pub extern "C" fn rtree_node_children(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let child_node_refs: Vec<NodeRef> = match node_ref {
+        NodeRef::ITreeNode(ptr) => {
+            let node = unsafe { &**ptr };
+            let mut children = Vec::new();
+            if let Some(left) = &node.left {
+                children.push(NodeRef::ITreeNode(left.as_ref() as *const _));
+            }
+            if let Some(right) = &node.right {
+                children.push(NodeRef::ITreeNode(right.as_ref() as *const _));
+            }
+            for &(min, max, id) in &node.overlapping_by_min {
+                children.push(NodeRef::ITreeNodeLeaf(min, max, id));
+            }
+            children
+        }
+        NodeRef::ITreeNodeLeaf(..) => Vec::new(),
         NodeRef::Parent2D(ptr) => unsafe { &**ptr }
             .children()
             .iter()
@@ -87,6 +106,8 @@ pub extern "C" fn rtree_node_id(node: *const RTreeNodeH, id: *mut usize) -> RTre
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let node_id = match node_ref {
+        NodeRef::ITreeNode(_) => return RTreeError::NodeNotLeaf,
+        NodeRef::ITreeNodeLeaf(_, _, id) => *id,
         NodeRef::Parent2D(_) | NodeRef::Parent3D(_) => {
             return RTreeError::NodeNotLeaf
         }
@@ -126,6 +147,21 @@ pub extern "C" fn rtree_node_envelope(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     match node_ref {
+        NodeRef::ITreeNode(ptr) => {
+            let node = unsafe { &**ptr };
+            let min = node.min;
+            let max = node.max;
+            unsafe {
+                *min_out = min;
+                *max_out = max;
+            }
+        },
+        NodeRef::ITreeNodeLeaf(min, max, _) => {
+            unsafe {
+                *min_out = *min;
+                *max_out = *max;
+            }
+        },
         NodeRef::Parent2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Parent3D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Node2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),

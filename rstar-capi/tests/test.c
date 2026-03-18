@@ -216,74 +216,74 @@ bool test_root_node_id(void) {
     }
 }
 
-// bool test_rtree_1d(void) {
-//     const size_t N = 4;
-//     const uint32_t dim = 1;
-//     double mins[4] = {0.0, 1.0, 2.0, 3.0};
-//     double maxs[4] = {1.0, 2.0, 4.0, 4.0};
-//     size_t ids[4] = {1, 2, 3, 4};
-//     RTreeH *tree = NULL;
-//     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
-//     if (tree == NULL) {
-//         return false;
-//     }
+bool test_rtree_1d(void) {
+    const size_t N = 4;
+    const uint32_t dim = 1;
+    double mins[4] = {0.0, 1.0, 2.0, 3.0};
+    double maxs[4] = {1.0, 2.0, 4.0, 4.0};
+    size_t ids[4] = {1, 2, 3, 4};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        return false;
+    }
 
-//     double point1[1] = {0.5};
-//     double point2[1] = {1.5};
-//     double point3[1] = {3.5};
-//     double point4[1] = {4.5};
+    double point1[1] = {0.5};
+    double point2[1] = {1.5};
+    double point3[1] = {3.5};
+    double point4[1] = {4.5};
 
-//     size_t *ids_out1 = NULL;
-//     size_t nids_out1 = 0;
-//     rtree_locate_all_at_point(tree, point1, &ids_out1, &nids_out1);
-//     if (nids_out1 != 1 || ids_out1[0] != 1) {
-//         fprintf(stderr, "Expected to find id [1] at point1");
-//         rtree_free_ids(ids_out1, nids_out1);
-//         rtree_free(tree);
-//         return false;
-//     } else {
-//         rtree_free_ids(ids_out1, nids_out1);
-//     }
+    size_t *ids_out1 = NULL;
+    size_t nids_out1 = 0;
+    rtree_locate_all_at_point(tree, point1, &ids_out1, &nids_out1);
+    if (nids_out1 != 1 || ids_out1[0] != 1) {
+        fprintf(stderr, "Expected to find id [1] at point1");
+        rtree_free_ids(ids_out1, nids_out1);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out1, nids_out1);
+    }
 
-//     size_t *ids_out2 = NULL;
-//     size_t nids_out2 = 0;
-//     rtree_locate_all_at_point(tree, point2, &ids_out2, &nids_out2);
-//     if (nids_out2 != 1 || ids_out2[0] != 2) {
-//         fprintf(stderr, "Expected to find id [2] at point2");
-//         rtree_free_ids(ids_out2, nids_out2);
-//         rtree_free(tree);
-//         return false;
-//     } else {
-//         rtree_free_ids(ids_out2, nids_out2);
-//     }
+    size_t *ids_out2 = NULL;
+    size_t nids_out2 = 0;
+    rtree_locate_all_at_point(tree, point2, &ids_out2, &nids_out2);
+    if (nids_out2 != 1 || ids_out2[0] != 2) {
+        fprintf(stderr, "Expected to find id [2] at point2");
+        rtree_free_ids(ids_out2, nids_out2);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out2, nids_out2);
+    }
 
-//     size_t *ids_out3 = NULL;
-//     size_t nids_out3 = 0;
-//     rtree_locate_all_at_point(tree, point3, &ids_out3, &nids_out3);
-//     if (nids_out3 != 2 || ids_out3[1] != 3 || ids_out3[0] != 4) {
-//         fprintf(stderr, "Expected to find ids [4, 3] at point3");
-//         rtree_free_ids(ids_out3, nids_out3);
-//         rtree_free(tree);
-//         return false;
-//     } else {
-//         rtree_free_ids(ids_out3, nids_out3);
-//     }
+    size_t *ids_out3 = NULL;
+    size_t nids_out3 = 0;
+    rtree_locate_all_at_point(tree, point3, &ids_out3, &nids_out3);
+    if (nids_out3 != 2 || ids_out3[1] != 4 || ids_out3[0] != 3) {
+        fprintf(stderr, "Expected to find ids [3, 4] at point3");
+        rtree_free_ids(ids_out3, nids_out3);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out3, nids_out3);
+    }
     
-//     size_t *ids_out4 = NULL;
-//     size_t nids_out4 = 0;
-//     rtree_locate_all_at_point(tree, point4, &ids_out4, &nids_out4);
-//     if (nids_out4 != 0) {
-//         fprintf(stderr, "Expected to find no ids at point4");
-//         rtree_free_ids(ids_out4, nids_out4);
-//         rtree_free(tree);
-//         return false;
-//     } else {
-//         rtree_free_ids(ids_out4, nids_out4);
-//     }
+    size_t *ids_out4 = NULL;
+    size_t nids_out4 = 0;
+    rtree_locate_all_at_point(tree, point4, &ids_out4, &nids_out4);
+    if (nids_out4 != 0) {
+        fprintf(stderr, "Expected to find no ids at point4");
+        rtree_free_ids(ids_out4, nids_out4);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out4, nids_out4);
+    }
 
-//     rtree_free(tree);
-//     return true;
-// }
+    rtree_free(tree);
+    return true;
+}
 
 void run_test(
     bool (test)(void),
@@ -307,7 +307,7 @@ int main(void) {
     run_test(test_bulk_load, "test_bulk_load", &passed);
     run_test(test_nodes, "test_nodes", &passed);
     run_test(test_root_node_id, "test_root_node_id", &passed);
-    // run_test(test_rtree_1d, "test_rtree_1d", &passed);
+    run_test(test_rtree_1d, "test_rtree_1d", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
