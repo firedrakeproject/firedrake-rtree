@@ -1,12 +1,12 @@
 #![forbid(unsafe_code)]
 
 #[derive(Debug, PartialEq)]
-pub struct IntervalTreeNode {
-    pub center: f64,
-    pub left: Option<Box<IntervalTreeNode>>,
-    pub right: Option<Box<IntervalTreeNode>>,
-    pub overlapping_by_min: Vec<(f64, f64, usize)>,
-    pub overlapping_by_max: Vec<(f64, f64, usize)>,
+struct IntervalTreeNode {
+    center: f64,
+    left: Option<Box<IntervalTreeNode>>,
+    right: Option<Box<IntervalTreeNode>>,
+    overlapping_by_min: Vec<(f64, f64, usize)>,
+    overlapping_by_max: Vec<(f64, f64, usize)>,
 }
 
 /// Builds an interval tree node from a list of intervals. Each interval is represented as a tuple of (min, max, id).
@@ -53,9 +53,9 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
     };
 
     let mut overlapping_by_min = s_center.clone();
-    overlapping_by_min.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    overlapping_by_min.sort_by(|a, b| a.0.total_cmp(&b.0));
     let mut overlapping_by_max = s_center.clone();
-    overlapping_by_max.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    overlapping_by_max.sort_by(|a, b| a.1.total_cmp(&b.1));
 
     IntervalTreeNode {
         center,
@@ -73,6 +73,7 @@ pub struct IntervalTree {
 
 impl IntervalTree {
     /// Creates an interval tree from the given arrays of minimums, maximums, and ids. The lengths of the input arrays must be the same.
+    /// Returns an empty tree if the input arrays are empty.
     ///
     /// # Panics
     ///
@@ -103,9 +104,6 @@ impl IntervalTree {
     pub fn locate_all_at_point(&self, p: f64) -> Vec<usize> {
         // Pre-order traversal of the interval tree
         let mut result = Vec::new();
-        if self.root.is_none() {
-            return result;
-        }
         let mut stack = Vec::new();
         if let Some(root) = &self.root {
             stack.push(root);
@@ -238,9 +236,9 @@ fn test_interval_tree_locate_all_at_point() {
     let result = tree.locate_all_at_point(-1.5);
     assert_eq!(result.len(), 1);
     assert!(result.contains(&4));
+    // test points outside all intervals
     let result = tree.locate_all_at_point(2.5);
     assert_eq!(result.len(), 0);
-    // test point outside all intervals
     let result = tree.locate_all_at_point(-3.0);
     assert_eq!(result.len(), 0);
 }
