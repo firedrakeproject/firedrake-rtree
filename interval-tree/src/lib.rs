@@ -1,14 +1,14 @@
 #[derive(Debug, PartialEq)]
-pub struct NodeInterval {
+pub struct IntervalTreeNode {
     pub center: f64,
-    pub left: Option<Box<NodeInterval>>,
-    pub right: Option<Box<NodeInterval>>,
+    pub left: Option<Box<IntervalTreeNode>>,
+    pub right: Option<Box<IntervalTreeNode>>,
     pub overlapping_by_min: Vec<(f64, f64, usize)>,
     pub overlapping_by_max: Vec<(f64, f64, usize)>,
 }
 
 // This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
-fn build_node(intervals: Vec<(f64, f64, usize)>) -> NodeInterval {
+fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
     assert!(!intervals.is_empty(), "Cannot build an interval tree node from an empty list of intervals");
     let min = intervals.iter().map(|i| i.0).fold(f64::INFINITY, f64::min);
     let max = intervals.iter().map(|i| i.1).fold(f64::NEG_INFINITY, f64::max);
@@ -44,7 +44,7 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> NodeInterval {
     let mut overlapping_by_max = s_center.clone();
     overlapping_by_max.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
-    NodeInterval {
+    IntervalTreeNode {
         center,
         left,
         right,
@@ -55,7 +55,7 @@ fn build_node(intervals: Vec<(f64, f64, usize)>) -> NodeInterval {
 
 
 pub struct IntervalTree {
-    root: Option<NodeInterval>,
+    root: Option<IntervalTreeNode>,
     size: usize,
 }
 
