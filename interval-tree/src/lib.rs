@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 #[derive(Debug, PartialEq)]
 pub struct IntervalTreeNode {
     pub center: f64,
@@ -121,6 +123,10 @@ impl IntervalTree {
         }
         result
     }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
 }
 
 #[test]
@@ -191,7 +197,7 @@ fn test_interval_tree_empty_bulk_load() {
     let maxs = vec![];
     let ids = vec![];
     let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
-    assert_eq!(tree.size, 0);
+    assert_eq!(tree.size(), 0);
     assert_eq!(tree.root, None);
 }
 
@@ -201,6 +207,7 @@ fn test_interval_tree_locate_all_at_point() {
     let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
     let ids = vec![0, 1, 2, 3, 4];
     let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    assert_eq!(tree.size(), 5);
     let result = tree.locate_all_at_point(0.25);
     assert_eq!(result.len(), 2);
     assert!(result.contains(&0));
@@ -222,5 +229,18 @@ fn test_interval_tree_locate_all_at_point() {
     assert_eq!(result.len(), 1);
     assert!(result.contains(&4));
     let result = tree.locate_all_at_point(2.5);
+    assert_eq!(result.len(), 0);
+    // test point outside all intervals
+    let result = tree.locate_all_at_point(-3.0);
+    assert_eq!(result.len(), 0);
+}
+
+#[test]
+fn test_interval_tree_locate_all_at_point_empty_tree() {
+    let mins = vec![];
+    let maxs = vec![];
+    let ids = vec![];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let result = tree.locate_all_at_point(0.0);
     assert_eq!(result.len(), 0);
 }
