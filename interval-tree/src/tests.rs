@@ -43,6 +43,12 @@ fn test_build_node() {
 }
 
 #[test]
+#[should_panic(expected = "Cannot build an interval tree node from an empty list of intervals")]
+fn test_build_node_empty() {
+    let _ = build_node(vec![]);
+}
+
+#[test]
 fn test_interval_tree_bulk_load() {
     let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
     let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
