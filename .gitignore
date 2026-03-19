@@ -6,3 +6,4 @@ rtree-capi/python/firedrake_rtree/*.so
 rtree-capi/python/firedrake_rtree/*.pyd
 rtree-capi/python/firedrake_rtree/*.dSYM
 rtree-capi/python/firedrake_rtree/include
+rtree-capi/python/firedrake_rtree/__pycache__
