@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "rstar-capi.h"
+#include "rtree-capi.h"
 
 
 bool test_create_and_free(void) {

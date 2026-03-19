@@ -26,7 +26,7 @@ fn c_api() {
             test_src.to_str().unwrap(),
             "-L",
             lib_dir.to_str().unwrap(),
-            "-lrstar_capi",
+            "-lrtree_capi",
             "-o",
             test_binary.to_str().unwrap(),
         ])
