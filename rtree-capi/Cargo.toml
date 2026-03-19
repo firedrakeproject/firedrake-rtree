@@ -1,5 +1,5 @@
 [package]
-name = "rstar-capi"
+name = "rtree-capi"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,5 +11,5 @@ interval-tree = { path = "../interval-tree" }
 cbindgen = "0.29"
 
 [lib]
-name = "rstar_capi"
+name = "rtree_capi"
 crate-type = ["cdylib"]

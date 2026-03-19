@@ -12,7 +12,7 @@ fn generate_bindings() {
         .with_config(config)
         .generate()
         .expect("Unable to generate bindings")
-        .write_to_file("include/rstar-capi.h");
+        .write_to_file("include/rtree-capi.h");
 }
 
 fn main() {
