@@ -69,8 +69,8 @@ jobs:
           args: --out dist --manifest-path rtree-capi/Cargo.toml
       - uses: actions/upload-artifact@v6
         with:
-          name: wheels-sdist
-          path: dist
+          name: dist
+          path: dist/
 
   release:
     name: Release
