@@ -4,13 +4,23 @@ build-backend = "maturin"
 
 [project]
 name = "firedrake-rtree"
+description = "C api for spatial indexing"
 requires-python = ">=3.10"
 classifiers = [
+    "Intended Audience :: Science/Research",
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
+license = "MIT"
+readme = "README.md"
+maintainers = [
+    { name = "Leo Collins", email = "l.collins24@imperial.ac.uk"},
+]
 dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/firedrakeproject/firedrake-rtree"
 
 [tool.maturin]
 manifest-path = "rtree-capi/Cargo.toml"
