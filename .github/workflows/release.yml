@@ -92,6 +92,7 @@ jobs:
         with:
           packages-dir: dist
           verbose: true
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Upload to GitHub release
         if : github.event_name == 'release'
