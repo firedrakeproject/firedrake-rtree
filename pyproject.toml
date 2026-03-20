@@ -25,5 +25,5 @@ Repository = "https://github.com/firedrakeproject/firedrake-rtree"
 [tool.maturin]
 manifest-path = "rtree-capi/Cargo.toml"
 features = ["python"]
-python-source = "rtree-capi/python"
+python-source = "."
 module-name = "firedrake_rtree.rtree_capi"
