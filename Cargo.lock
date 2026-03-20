@@ -459,7 +459,7 @@ dependencies = [
 
 [[package]]
 name = "rtree-capi"
-version = "2026.0.5"
+version = "2026.0.6"
 dependencies = [
  "cbindgen",
  "interval-tree",

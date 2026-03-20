@@ -7,7 +7,7 @@ mod python {
     use pyo3::prelude::*;
 
     #[pymodule]
-    fn rtree_capi(_py: Python, _m: &Bound<'_, PyModule>) -> PyResult<()> {
+    fn firedrake_rtree(_py: Python, _m: &Bound<'_, PyModule>) -> PyResult<()> {
         Ok(())
     }
 }

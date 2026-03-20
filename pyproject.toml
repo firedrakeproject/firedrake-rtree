@@ -17,7 +17,7 @@ readme = "README.md"
 maintainers = [
     { name = "Leo Collins", email = "l.collins24@imperial.ac.uk"},
 ]
-dynamic = ["version"]
+dynamic = ["version"]  # gets version from rtree-capi/Cargo.toml
 
 [project.urls]
 Repository = "https://github.com/firedrakeproject/firedrake-rtree"
@@ -26,5 +26,9 @@ Repository = "https://github.com/firedrakeproject/firedrake-rtree"
 manifest-path = "rtree-capi/Cargo.toml"
 features = ["python"]
 python-source = "."
-module-name = "firedrake_rtree.rtree_capi"
-include = [{ path = "LICENSE", format = ["sdist", "wheel"] }, { path = "README.md", format = ["sdist", "wheel"] }]
+module-name = "firedrake_rtree"
+include = [
+    { path = "LICENSE", format = ["sdist", "wheel"] },
+    { path = "README.md", format = ["sdist", "wheel"] },
+    { path = "firedrake_rtree/include/*", format = ["sdist", "wheel"] },
+]
