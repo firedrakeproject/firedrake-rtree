@@ -15,7 +15,7 @@ fn generate_bindings() {
         .expect("Unable to generate bindings")
         .write_to_file("include/rtree-capi.h");
 
-    let py_include = Path::new(&crate_dir).join("python").join("firedrake_rtree").join("include");
+    let py_include = Path::new(&crate_dir).join("..").join("firedrake_rtree").join("include");
     fs::create_dir_all(&py_include).expect("Failed to create Python include directory");
     fs::copy(
         Path::new(&crate_dir).join("include").join("rtree-capi.h"),
