@@ -27,3 +27,4 @@ manifest-path = "rtree-capi/Cargo.toml"
 features = ["python"]
 python-source = "."
 module-name = "firedrake_rtree.rtree_capi"
+include = [{ path = "LICENSE", format = ["sdist", "wheel"] }, { path = "README.md", format = ["sdist", "wheel"] }]
