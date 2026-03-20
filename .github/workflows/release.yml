@@ -94,6 +94,8 @@ jobs:
           verbose: true
           password: ${{ secrets.PYPI_API_TOKEN }}
 
+      - uses: actions/checkout@v6
+
       - name: Upload to GitHub release
         if : github.event_name == 'release'
         env:
