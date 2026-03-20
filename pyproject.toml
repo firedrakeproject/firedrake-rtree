@@ -17,7 +17,7 @@ readme = "README.md"
 maintainers = [
     { name = "Leo Collins", email = "l.collins24@imperial.ac.uk"},
 ]
-dynamic = ["version"]
+dynamic = ["version"]  # gets version from rtree-capi/Cargo.toml
 
 [project.urls]
 Repository = "https://github.com/firedrakeproject/firedrake-rtree"
