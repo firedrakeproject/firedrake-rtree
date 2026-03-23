@@ -264,8 +264,8 @@ bool test_rtree_1d(void) {
     // test rtree_depth
     size_t depth = 0;
     rtree_depth(tree, &depth);
-    if (depth != 1) {
-        fprintf(stderr, "Expected tree depth 1, got %zu\n", depth);
+    if (depth != 2) {
+        fprintf(stderr, "Expected tree depth 2, got %zu\n", depth);
         rtree_free(tree);
         return false;
     }
@@ -611,8 +611,8 @@ bool test_rtree_singleton_depth(void) {
     // test rtree_depth
     size_t depth = 0;
     rtree_depth(tree, &depth);
-    if (depth != 0) {
-        fprintf(stderr, "Expected tree depth 0 for singleton tree, got %zu\n", depth);
+    if (depth != 1) {
+        fprintf(stderr, "Expected tree depth 1 for singleton tree, got %zu\n", depth);
         rtree_free(tree);
         return false;
     }
@@ -630,13 +630,62 @@ bool test_rtree_singleton_depth(void) {
 
     size_t depth1d = 0;
     rtree_depth(tree1d, &depth1d);
-    if (depth1d != 0) {
-        fprintf(stderr, "Expected tree depth 0 for singleton 1d tree, got %zu\n", depth1d);
+    if (depth1d != 1) {
+        fprintf(stderr, "Expected tree depth 1 for singleton 1d tree, got %zu\n", depth1d);
         rtree_free(tree1d);
         return false;
     }
     rtree_free(tree1d);
 
+    return true;
+}
+
+bool test_rtree_depth(void) {
+    // Default MAX_SIZE is 6, so bulk loading 6 should create a tree of depth 1,
+    // while bulk loading 7 should create a tree of depth 2.
+    const size_t N = 6;
+    const uint32_t dim = 2;
+    double mins[12];
+    double maxs[12];
+    size_t ids[6];
+    for (size_t i = 0; i < N; i++) {
+        mins[2*i] = (double)i;
+        mins[2*i + 1] = (double)i;
+        maxs[2*i] = (double)i + 0.5;
+        maxs[2*i + 1] = (double)i + 0.5;
+        ids[i] = i + 1;
+    }
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        fprintf(stderr, "Expected to create tree, got null pointer\n");
+        return false;
+    }
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 1) {
+        fprintf(stderr, "Expected tree depth 1 for 6 items, got %zu\n", depth);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free(tree);
+
+    const size_t N1 = 7;
+    RTreeH *tree1 = NULL;
+    rtree_bulk_load(&tree1, mins, maxs, ids, N1, dim);
+    if (tree1 == NULL) {
+        fprintf(stderr, "Expected to create tree, got null pointer\n");
+        return false;
+    }
+    size_t depth1 = 0;
+    rtree_depth(tree1, &depth1);
+    if (depth1 != 2) {
+        fprintf(stderr, "Expected tree depth 2 for 7 items, got %zu\n", depth1);
+        rtree_free(tree1);
+        return false;
+    }
+
+    rtree_free(tree1);
     return true;
 }
 
@@ -667,6 +716,7 @@ int main(void) {
     run_test(test_rtree_empty_1d, "test_rtree_empty_1d", &passed);
     run_test(test_invalid_dimension, "test_invalid_dimension", &passed);
     run_test(test_rtree_singleton_depth, "test_rtree_singleton_depth", &passed);
+    run_test(test_rtree_depth, "test_rtree_depth", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
