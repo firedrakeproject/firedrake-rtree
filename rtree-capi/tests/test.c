@@ -199,6 +199,7 @@ bool test_nodes(void) {
         rtree_free(tree);
         return false;
     }
+    rtree_node_children_free(child1children, nchild1children);
 
     rtree_node_children_free(children, nchildren);
     rtree_node_free(root);
@@ -225,6 +226,8 @@ bool test_root_node_id(void) {
         rtree_free(tree);
         return false;
     }
+    rtree_node_free(root);
+    rtree_free(tree);
     return true;
 }
 
@@ -372,6 +375,7 @@ bool test_rtree_node_1d(void) {
         rtree_free(tree);
         return false;
     }
+    rtree_node_children_free(child1children, nchild1children);
 
     rtree_node_children_free(children, nchildren);
     rtree_node_free(root);

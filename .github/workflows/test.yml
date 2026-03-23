@@ -20,3 +20,15 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Install Valgrind
+      run: sudo apt-get update && sudo apt-get install -y valgrind
+    - name: memcheck
+      run: |
+        cargo test -p rtree-capi c_api -- --nocapture
+        LD_LIBRARY_PATH=target/debug valgrind \
+          --tool=memcheck \
+          --leak-check=full \
+          --show-leak-kinds=all \
+          --track-origins=yes \
+          --error-exitcode=99 \
+          target/debug/test_c_api
