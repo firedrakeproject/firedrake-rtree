@@ -671,8 +671,18 @@ bool test_rtree_depth(void) {
     rtree_free(tree);
 
     const size_t N1 = 7;
+    double mins1[14];
+    double maxs1[14];
+    size_t ids1[7];
+    for (size_t i = 0; i < N1; i++) {
+        mins1[2*i] = (double)i;
+        mins1[2*i + 1] = (double)i;
+        maxs1[2*i] = (double)i + 0.5;
+        maxs1[2*i + 1] = (double)i + 0.5;
+        ids1[i] = i + 1;
+    }
     RTreeH *tree1 = NULL;
-    rtree_bulk_load(&tree1, mins, maxs, ids, N1, dim);
+    rtree_bulk_load(&tree1, mins1, maxs1, ids1, N1, dim);
     if (tree1 == NULL) {
         fprintf(stderr, "Expected to create tree, got null pointer\n");
         return false;
