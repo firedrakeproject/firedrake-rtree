@@ -47,3 +47,5 @@ RTreeError rtree_node_envelope(const struct RTreeNodeH *node, double *min_out, d
 RTreeError rtree_node_free(struct RTreeNodeH *node);
 
 RTreeError rtree_root_node(const struct RTreeH *tree, struct RTreeNodeH **node);
+
+RTreeError rtree_size(const struct RTreeH *tree, size_t *size_out);

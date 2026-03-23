@@ -169,6 +169,21 @@ pub extern "C" fn rtree_locate_all_at_point(
 }
 
 #[no_mangle]
+pub extern "C" fn rtree_size(tree: *const RTreeH, size_out: *mut usize) -> RTreeError {
+    if tree.is_null() || size_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let size = match rtree {
+        RTreeDim::D1(tree) => tree.size(),
+        RTreeDim::D2(tree) => tree.size(),
+        RTreeDim::D3(tree) => tree.size(),
+    };
+    unsafe { *size_out = size };
+    RTreeError::Success
+}
+
+#[no_mangle]
 pub extern "C" fn rtree_free_ids(ids: *mut usize, n: usize) -> RTreeError {
     if ids.is_null() {
         return RTreeError::NullPointer;

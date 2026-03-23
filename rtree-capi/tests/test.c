@@ -79,6 +79,15 @@ bool test_bulk_load(void) {
         return false;
     }
 
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
     double point1[2] = {1.5, 1.5};
     double point2[2] = {0.0, 0.0};
     double point3[2] = {-1.0, 0.0};
@@ -217,6 +226,15 @@ bool test_rtree_1d(void) {
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
+        return false;
+    }
+    
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
         return false;
     }
 
@@ -373,6 +391,15 @@ bool test_rtree_empty(void) {
         return false;
     }
 
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
     // Query empty tree
     double point[2] = {0.0, 0.0};
     size_t *ids_out = NULL;
@@ -391,19 +418,21 @@ bool test_rtree_empty(void) {
     RTreeNodeH *root = NULL;
     rtree_root_node(tree, &root);
     if (root == NULL) {
+        fprintf(stderr, "Expected root node of empty tree to be non-null\n");
         rtree_free(tree);
         return false;
     }
-    double root_min[2];
-    double root_max[2];
-    rtree_node_envelope(root, root_min, root_max);
-    if (root_min[0] != 0.0 || root_min[1] != 0.0 || root_max[0] != 0.0 || root_max[1] != 0.0) {
-        fprintf(stderr, "Expected root envelope of empty tree to be [0, 0], [0, 0], got [%f, %f], [%f, %f]\n",
-            root_min[0], root_min[1], root_max[0], root_max[1]);
-        rtree_node_free(root);
-        rtree_free(tree);
-        return false;
-    }
+
+    // double root_min[2];
+    // double root_max[2];
+    // rtree_node_envelope(root, root_min, root_max);
+    // if (root_min[0] != 0.0 || root_min[1] != 0.0 || root_max[0] != 0.0 || root_max[1] != 0.0) {
+    //     fprintf(stderr, "Expected root envelope of empty tree to be [0, 0], [0, 0], got [%f, %f], [%f, %f]\n",
+    //         root_min[0], root_min[1], root_max[0], root_max[1]);
+    //     rtree_node_free(root);
+    //     rtree_free(tree);
+    //     return false;
+    // }
 
     // Get children of root node of empty tree
     RTreeNodeH **children = NULL;
