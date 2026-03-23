@@ -223,7 +223,7 @@ pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTr
         return RTreeError::Success;
     }
     let depth = match rtree {
-        RTreeDim::D1(tree) => _interval_tree_depth(tree.root().unwrap()),
+        RTreeDim::D1(tree) => _interval_tree_depth(tree.root().unwrap()) + 1,
         RTreeDim::D2(tree) => _rtree_depth(tree.root()),
         RTreeDim::D3(tree) => _rtree_depth(tree.root()),
     };
