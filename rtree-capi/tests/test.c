@@ -595,6 +595,51 @@ bool test_rtree_empty_1d(void) {
     return true;
 }
 
+bool test_rtree_singleton_depth(void) {
+    const size_t N = 1;
+    const uint32_t dim = 2;
+    double mins[2] = {0.0, 0.0};
+    double maxs[2] = {1.0, 1.0};
+    size_t ids[1] = {1};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        fprintf(stderr, "Expected to create tree, got null pointer\n");
+        return false;
+    }
+
+    // test rtree_depth
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 0) {
+        fprintf(stderr, "Expected tree depth 0 for singleton tree, got %zu\n", depth);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free(tree);
+
+    const uint32_t dim1d = 1;
+    double mins1d[1] = {0.0};
+    double maxs1d[1] = {1.0};
+    RTreeH *tree1d = NULL;
+    rtree_bulk_load(&tree1d, mins1d, maxs1d, ids, N, dim1d);
+    if (tree1d == NULL) {
+        fprintf(stderr, "Expected to create 1d tree, got null pointer\n");
+        return false;
+    }
+
+    size_t depth1d = 0;
+    rtree_depth(tree1d, &depth1d);
+    if (depth1d != 0) {
+        fprintf(stderr, "Expected tree depth 0 for singleton 1d tree, got %zu\n", depth1d);
+        rtree_free(tree1d);
+        return false;
+    }
+    rtree_free(tree1d);
+
+    return true;
+}
+
 void run_test(
     bool (test)(void),
     const char *test_name,
@@ -621,6 +666,7 @@ int main(void) {
     run_test(test_rtree_empty, "test_rtree_empty", &passed);
     run_test(test_rtree_empty_1d, "test_rtree_empty_1d", &passed);
     run_test(test_invalid_dimension, "test_invalid_dimension", &passed);
+    run_test(test_rtree_singleton_depth, "test_rtree_singleton_depth", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
