@@ -103,6 +103,14 @@ bool test_bulk_load(void) {
         return false;
     }
 
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 1) {
+        fprintf(stderr, "Expected tree depth 1, got %zu\n", depth);
+        rtree_free(tree);
+        return false;
+    }
+
     double point1[2] = {1.5, 1.5};
     double point2[2] = {0.0, 0.0};
     double point3[2] = {-1.0, 0.0};
@@ -249,6 +257,15 @@ bool test_rtree_1d(void) {
     rtree_size(tree, &size);
     if (size != N) {
         fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
+    // test rtree_depth
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 1) {
+        fprintf(stderr, "Expected tree depth 1, got %zu\n", depth);
         rtree_free(tree);
         return false;
     }
@@ -421,6 +438,14 @@ bool test_rtree_empty(void) {
         return false;
     }
 
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 0) {
+        fprintf(stderr, "Expected empty tree depth 0, got %zu\n", depth);
+        rtree_free(tree);
+        return false;
+    }
+
     // Query empty tree
     double point[2] = {0.0, 0.0};
     size_t *ids_out = NULL;
@@ -499,6 +524,14 @@ bool test_rtree_empty_1d(void) {
     rtree_size(tree, &size);
     if (size != N) {
         fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
+    size_t depth = 0;
+    rtree_depth(tree, &depth);
+    if (depth != 0) {
+        fprintf(stderr, "Expected empty tree depth 0, got %zu\n", depth);
         rtree_free(tree);
         return false;
     }
