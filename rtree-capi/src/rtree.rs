@@ -101,7 +101,22 @@ pub extern "C" fn rtree_bulk_load(
     n: usize,
     dim: u32,
 ) -> RTreeError {
-    if tree.is_null() || mins.is_null() || maxs.is_null() || ids.is_null() {
+    if tree.is_null() {
+        return RTreeError::NullPointer;
+    }
+
+    if n == 0 {
+        let rtree = match dim {
+            1 => RTreeDim::D1(IntervalTree::new()),
+            2 => RTreeDim::D2(RTree::new()),
+            3 => RTreeDim::D3(RTree::new()),
+            _ => return RTreeError::InvalidDimension,
+        };
+        unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
+        return RTreeError::Success;
+    }
+
+    if mins.is_null() || maxs.is_null() || ids.is_null() {
         return RTreeError::NullPointer;
     }
 
@@ -150,6 +165,21 @@ pub extern "C" fn rtree_locate_all_at_point(
         *nids_out = n;
         *ids_out = ptr;
     }
+    RTreeError::Success
+}
+
+#[no_mangle]
+pub extern "C" fn rtree_size(tree: *const RTreeH, size_out: *mut usize) -> RTreeError {
+    if tree.is_null() || size_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let size = match rtree {
+        RTreeDim::D1(tree) => tree.size(),
+        RTreeDim::D2(tree) => tree.size(),
+        RTreeDim::D3(tree) => tree.size(),
+    };
+    unsafe { *size_out = size };
     RTreeError::Success
 }
 

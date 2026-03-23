@@ -34,6 +34,21 @@ bool test_null(void) {
     return true;
 }
 
+bool test_invalid_dimension(void) {
+    RTreeH *tree = NULL;
+    RTreeError err = rtree_create(&tree, 0);
+    if (err != InvalidDimension) {
+        fprintf(stderr, "Expected InvalidDimension error for rtree_create with dimension 0\n");
+        return false;
+    }
+    err = rtree_create(&tree, 4);
+    if (err != InvalidDimension) {
+        fprintf(stderr, "Expected InvalidDimension error for rtree_create with dimension 4\n");
+        return false;
+    }
+    return true;
+}
+
 
 bool test_get_dimension(void) {
     RTreeH *tree3d = NULL;
@@ -76,6 +91,15 @@ bool test_bulk_load(void) {
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
+        return false;
+    }
+
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
         return false;
     }
 
@@ -208,29 +232,6 @@ bool test_nodes(void) {
 }
 
 
-bool test_root_node_id(void) {
-    const size_t N = 2;
-    const uint32_t dim = 2;
-    double mins[4] = {0.0, 0.0, 1.0, 1.0};
-    double maxs[4] = {2.0, 2.0, 3.0, 3.0};
-    size_t ids[2] = {1, 2};
-    RTreeH *tree = NULL;
-    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
-    if (tree == NULL) {
-        return false;
-    }
-
-    RTreeNodeH *root = NULL;
-    rtree_root_node(tree, &root);
-    if (root == NULL) {
-        rtree_free(tree);
-        return false;
-    }
-    rtree_node_free(root);
-    rtree_free(tree);
-    return true;
-}
-
 bool test_rtree_1d(void) {
     const size_t N = 4;
     const uint32_t dim = 1;
@@ -240,6 +241,15 @@ bool test_rtree_1d(void) {
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
+        return false;
+    }
+    
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
         return false;
     }
 
@@ -311,6 +321,8 @@ bool test_rtree_node_1d(void) {
     if (tree == NULL) {
         return false;
     }
+
+    // Get root node
     RTreeNodeH *root = NULL;
     rtree_root_node(tree, &root);
     if (root == NULL) {
@@ -318,6 +330,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get envelope of root node
     double root_min[1];
     double root_max[1];
     rtree_node_envelope(root, root_min, root_max);
@@ -329,6 +342,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get children of root node
     struct RTreeNodeH **children = NULL;
     size_t nchildren = 0;
     rtree_node_children(root, &children, &nchildren);
@@ -340,6 +354,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get envelopes of child nodes
     double child1_min[1];
     double child1_max[1];
     rtree_node_envelope(children[0], child1_min, child1_max);
@@ -364,6 +379,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get children of child1 node
     RTreeNodeH **child1children = NULL;
     size_t nchild1children = 0;
     rtree_node_children(children[0], &child1children, &nchild1children);
@@ -376,6 +392,169 @@ bool test_rtree_node_1d(void) {
         return false;
     }
     rtree_node_children_free(child1children, nchild1children);
+
+    rtree_node_children_free(children, nchildren);
+    rtree_node_free(root);
+    rtree_free(tree);
+    return true;
+}
+
+bool test_rtree_empty(void) {
+    const size_t N = 0;
+    const uint32_t dim = 2;
+    double *mins = NULL;
+    double *maxs = NULL;
+    size_t *ids = NULL;
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        fprintf(stderr, "Expected to create empty tree, got null pointer\n");
+        return false;
+    }
+
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
+    // Query empty tree
+    double point[2] = {0.0, 0.0};
+    size_t *ids_out = NULL;
+    size_t nids_out = 0;
+    rtree_locate_all_at_point(tree, point, &ids_out, &nids_out);
+    if (nids_out != 0) {
+        fprintf(stderr, "Expected to find no ids at point in empty tree");
+        rtree_free_ids(ids_out, nids_out);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out, nids_out);
+    }
+
+    // Check root node of empty tree
+    RTreeNodeH *root = NULL;
+    rtree_root_node(tree, &root);
+    if (root == NULL) {
+        fprintf(stderr, "Expected root node of empty tree to be non-null\n");
+        rtree_free(tree);
+        return false;
+    }
+
+    // Check envelope of root node of empty tree
+    double root_min[2] = {1.0, 1.0};  // initialize to something
+    double root_max[2] = {1.0, 1.0};
+    RTreeError err = rtree_node_envelope(root, root_min, root_max);
+    if (err != EmptyNodeEnvelope) {
+        fprintf(stderr, "Expected EmptyNodeEnvelope error for envelope of root node of empty tree\n");
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    for (size_t i = 0; i < dim; i++) {
+        if (root_min[i] != 1.0 || root_max[i] != 1.0) {
+            fprintf(stderr, "Expected root_min and root_max to be unchanged for empty node, got root_min[%zu] = %f, root_max[%zu] = %f\n",
+                i, root_min[i], i, root_max[i]);
+            rtree_node_free(root);
+            rtree_free(tree);
+            return false;
+        }
+    }
+
+    // Get children of root node of empty tree
+    RTreeNodeH **children = NULL;
+    size_t nchildren = 0;
+    rtree_node_children(root, &children, &nchildren);
+    if (nchildren != 0) {
+        fprintf(stderr, "Expected root of empty tree to have 0 children, got %zu\n", nchildren);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    rtree_node_children_free(children, nchildren);
+    rtree_node_free(root);
+    rtree_free(tree);
+    return true;
+}
+
+bool test_rtree_empty_1d(void) {
+    const size_t N = 0;
+    const uint32_t dim = 1;
+    double *mins = NULL;
+    double *maxs = NULL;
+    size_t *ids = NULL;
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        fprintf(stderr, "Expected to create empty tree, got null pointer\n");
+        return false;
+    }
+    // test rtree_size
+    size_t size = 0;
+    rtree_size(tree, &size);
+    if (size != N) {
+        fprintf(stderr, "Expected tree size %zu, got %zu\n", N, size);
+        rtree_free(tree);
+        return false;
+    }
+
+    // Query empty tree
+    double point[1] = {0.0};
+    size_t *ids_out = NULL;
+    size_t nids_out = 0;
+    rtree_locate_all_at_point(tree, point, &ids_out, &nids_out);
+    if (nids_out != 0) {
+        fprintf(stderr, "Expected to find no ids at point in empty tree");
+        rtree_free_ids(ids_out, nids_out);
+        rtree_free(tree);
+        return false;
+    } else {
+        rtree_free_ids(ids_out, nids_out);
+    }
+
+    // Check root node of empty tree
+    RTreeNodeH *root = NULL;
+    rtree_root_node(tree, &root);
+    if (root == NULL) {
+        fprintf(stderr, "Expected root node of empty tree to be non-null\n");
+        rtree_free(tree);
+        return false;
+    }
+
+    // Check envelope of root node of empty tree
+    double root_min[1] = {1.0};  // initialize to something
+    double root_max[1] = {1.0};
+    RTreeError err = rtree_node_envelope(root, root_min, root_max);
+    if (err != EmptyNodeEnvelope) {
+        fprintf(stderr, "Expected EmptyNodeEnvelope error for envelope of root node of empty tree\n");
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    if (root_min[0] != 1.0 || root_max[0] != 1.0) {
+        fprintf(stderr, "Expected root_min and root_max to be unchanged for empty node, got root_min[0] = %f, root_max[0] = %f\n",
+            root_min[0], root_max[0]);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+
+    // Get children of root node of empty tree
+    RTreeNodeH **children = NULL;
+    size_t nchildren = 0;
+    rtree_node_children(root, &children, &nchildren);
+    if (nchildren != 0) {
+        fprintf(stderr, "Expected root of empty tree to have 0 children, got %zu\n", nchildren);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
 
     rtree_node_children_free(children, nchildren);
     rtree_node_free(root);
@@ -404,9 +583,11 @@ int main(void) {
     run_test(test_get_dimension, "test_get_dimension", &passed);
     run_test(test_bulk_load, "test_bulk_load", &passed);
     run_test(test_nodes, "test_nodes", &passed);
-    run_test(test_root_node_id, "test_root_node_id", &passed);
     run_test(test_rtree_1d, "test_rtree_1d", &passed);
     run_test(test_rtree_node_1d, "test_rtree_node_1d", &passed);
+    run_test(test_rtree_empty, "test_rtree_empty", &passed);
+    run_test(test_rtree_empty_1d, "test_rtree_empty_1d", &passed);
+    run_test(test_invalid_dimension, "test_invalid_dimension", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");

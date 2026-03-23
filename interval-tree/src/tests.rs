@@ -68,6 +68,13 @@ fn test_interval_tree_bulk_load() {
 }
 
 #[test]
+fn test_interval_tree_new() {
+    let tree = IntervalTree::new();
+    assert_eq!(tree.size(), 0);
+    assert_eq!(tree.root(), None);
+}
+
+#[test]
 fn test_interval_tree_empty_bulk_load() {
     let mins = vec![];
     let maxs = vec![];

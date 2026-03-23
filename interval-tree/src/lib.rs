@@ -101,10 +101,7 @@ impl IntervalTree {
             "Inputs must have the same length"
         );
         if n == 0 {
-            return Self {
-                root: None,
-                size: 0,
-            };
+            return Self::new();
         }
         let elements: Vec<(f64, f64, usize)> = (0..n).map(|i| (mins[i], maxs[i], ids[i])).collect();
         Self {
@@ -159,6 +156,15 @@ impl IntervalTree {
     #[must_use]
     pub fn root(&self) -> Option<&IntervalTreeNode> {
         self.root.as_ref()
+    }
+
+    /// Returns an empty interval tree.
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            root: None,
+            size: 0,
+        }
     }
 }
 
