@@ -306,6 +306,8 @@ bool test_rtree_node_1d(void) {
     if (tree == NULL) {
         return false;
     }
+
+    // Get root node
     RTreeNodeH *root = NULL;
     rtree_root_node(tree, &root);
     if (root == NULL) {
@@ -313,6 +315,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get envelope of root node
     double root_min[1];
     double root_max[1];
     rtree_node_envelope(root, root_min, root_max);
@@ -324,6 +327,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get children of root node
     struct RTreeNodeH **children = NULL;
     size_t nchildren = 0;
     rtree_node_children(root, &children, &nchildren);
@@ -335,6 +339,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get envelopes of child nodes
     double child1_min[1];
     double child1_max[1];
     rtree_node_envelope(children[0], child1_min, child1_max);
@@ -359,6 +364,7 @@ bool test_rtree_node_1d(void) {
         return false;
     }
 
+    // Get children of child1 node
     RTreeNodeH **child1children = NULL;
     size_t nchild1children = 0;
     rtree_node_children(children[0], &child1children, &nchild1children);
@@ -423,16 +429,15 @@ bool test_rtree_empty(void) {
         return false;
     }
 
-    // double root_min[2];
-    // double root_max[2];
-    // rtree_node_envelope(root, root_min, root_max);
-    // if (root_min[0] != 0.0 || root_min[1] != 0.0 || root_max[0] != 0.0 || root_max[1] != 0.0) {
-    //     fprintf(stderr, "Expected root envelope of empty tree to be [0, 0], [0, 0], got [%f, %f], [%f, %f]\n",
-    //         root_min[0], root_min[1], root_max[0], root_max[1]);
-    //     rtree_node_free(root);
-    //     rtree_free(tree);
-    //     return false;
-    // }
+    double root_min[2];
+    double root_max[2];
+    RTreeError err = rtree_node_envelope(root, root_min, root_max);
+    if (err != EmptyNodeEnvelope) {
+        fprintf(stderr, "Expected EmptyNodeEnvelope error for envelope of root node of empty tree\n");
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
 
     // Get children of root node of empty tree
     RTreeNodeH **children = NULL;

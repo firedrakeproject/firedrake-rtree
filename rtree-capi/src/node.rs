@@ -10,6 +10,7 @@ enum NodeRef {
     Parent3D(*const ParentNode<Object3D>),
     Node2D(*const RTreeNode<Object2D>),
     Node3D(*const RTreeNode<Object3D>),
+    EmptyNode,  // root node of empty tree
 }
 
 pub enum RTreeNodeH {}
@@ -20,6 +21,16 @@ pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNode
         return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let size = match rtree {
+        RTreeDim::D1(tree) => tree.size(),
+        RTreeDim::D2(tree) => tree.size(),
+        RTreeDim::D3(tree) => tree.size(),
+    };
+    if size == 0 {
+        let node_ref = NodeRef::EmptyNode;
+        unsafe { *node = Box::into_raw(Box::new(node_ref)) as *mut RTreeNodeH };
+        return RTreeError::Success;
+    }
     let node_ref = match rtree {
         RTreeDim::D1(tree) => NodeRef::ITreeNode(tree.root().unwrap()),
         RTreeDim::D2(tree) => NodeRef::Parent2D(tree.root() as *const _),
@@ -41,6 +52,7 @@ pub extern "C" fn rtree_node_children(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     let child_node_refs: Vec<NodeRef> = match node_ref {
+        NodeRef::EmptyNode => Vec::new(),
         NodeRef::ITreeNode(ptr) => {
             let node = unsafe { &**ptr };
             let mut children = Vec::new();
@@ -115,6 +127,7 @@ pub extern "C" fn rtree_node_envelope(
     let node_ref = unsafe { &*(node as *const NodeRef) };
 
     match node_ref {
+        NodeRef::EmptyNode => return RTreeError::EmptyNodeEnvelope,
         NodeRef::ITreeNode(ptr) => {
             let node = unsafe { &**ptr };
             let min = node.min;
