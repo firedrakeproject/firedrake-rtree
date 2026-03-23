@@ -101,7 +101,22 @@ pub extern "C" fn rtree_bulk_load(
     n: usize,
     dim: u32,
 ) -> RTreeError {
-    if tree.is_null() || mins.is_null() || maxs.is_null() || ids.is_null() {
+    if tree.is_null() {
+        return RTreeError::NullPointer;
+    }
+
+    if n == 0 {
+        let rtree = match dim {
+            1 => RTreeDim::D1(IntervalTree::new()),
+            2 => RTreeDim::D2(RTree::new()),
+            3 => RTreeDim::D3(RTree::new()),
+            _ => return RTreeError::InvalidDimension,
+        };
+        unsafe { *tree = Box::into_raw(Box::new(rtree)) as *mut RTreeH };
+        return RTreeError::Success;
+    }
+
+    if mins.is_null() || maxs.is_null() || ids.is_null() {
         return RTreeError::NullPointer;
     }
 
