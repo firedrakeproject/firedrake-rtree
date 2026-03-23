@@ -26,6 +26,8 @@ RTreeError rtree_bulk_load(struct RTreeH **tree,
 
 RTreeError rtree_create(struct RTreeH **tree, uint32_t dim);
 
+RTreeError rtree_depth(const struct RTreeH *tree, size_t *depth_out);
+
 RTreeError rtree_free(struct RTreeH *tree);
 
 RTreeError rtree_free_ids(size_t *ids, size_t n);

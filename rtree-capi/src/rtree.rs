@@ -1,6 +1,6 @@
 use rstar::primitives::{GeomWithData, Rectangle};
-use rstar::RTree;
-use interval_tree::IntervalTree;
+use rstar::{ParentNode, RTree, RTreeNode, RTreeObject};
+use interval_tree::{IntervalTree, IntervalTreeNode};
 
 use crate::error::RTreeError;
 
@@ -144,7 +144,7 @@ pub extern "C" fn rtree_locate_all_at_point(
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let mut ids: Vec<usize> = match rtree {
         RTreeDim::D1(tree) => {
-            let p: f64 = unsafe { *(point as *const f64) };
+            let p: f64 = unsafe { *point };
             tree.locate_all_at_point(p)
         }
         RTreeDim::D2(tree) => {
@@ -180,6 +180,54 @@ pub extern "C" fn rtree_size(tree: *const RTreeH, size_out: *mut usize) -> RTree
         RTreeDim::D3(tree) => tree.size(),
     };
     unsafe { *size_out = size };
+    RTreeError::Success
+}
+
+fn _interval_tree_depth(node: &IntervalTreeNode) -> usize {
+    let left_depth = node
+        .left
+        .as_deref()
+        .map_or(0, |left| 1 + _interval_tree_depth(left));
+    let right_depth = node
+        .right
+        .as_deref()
+        .map_or(0, |right| 1 + _interval_tree_depth(right));
+    left_depth.max(right_depth)
+}
+
+fn _rtree_depth<T: RTreeObject>(node: &ParentNode<T>) -> usize {
+    node
+        .children()
+        .iter()
+        .map(|child| match child {
+            RTreeNode::Leaf(_) => 1,
+            RTreeNode::Parent(parent) => 1 + _rtree_depth(parent),
+        })
+        .max()
+        .unwrap_or(0)
+}
+
+#[no_mangle]
+pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTreeError {
+    if tree.is_null() || depth_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let size = match rtree {
+        RTreeDim::D1(tree) => tree.size(),
+        RTreeDim::D2(tree) => tree.size(),
+        RTreeDim::D3(tree) => tree.size(),
+    };
+    if size == 0 {
+        unsafe { *depth_out = 0 };
+        return RTreeError::Success;
+    }
+    let depth = match rtree {
+        RTreeDim::D1(tree) => _interval_tree_depth(tree.root().unwrap()),
+        RTreeDim::D2(tree) => _rtree_depth(tree.root()),
+        RTreeDim::D3(tree) => _rtree_depth(tree.root()),
+    };
+    unsafe { *depth_out = depth };
     RTreeError::Success
 }
 
