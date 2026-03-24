@@ -81,20 +81,19 @@ jobs:
       id-token: write
       contents: write
     steps:
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v7
         with:
           pattern: wheels-*
           merge-multiple: true
           path: dist/
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist
-          verbose: true
-          password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - uses: actions/checkout@v6
+      # - name: Publish to PyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: dist
+      #     verbose: true
+      #     password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Upload to GitHub release
         if : github.event_name == 'release'
