@@ -16,6 +16,7 @@ pub enum RTreeDim {
 // Opaque handle for C api
 pub enum RTreeH {}
 
+/// Returns a new empty tree with the given dimension.
 #[no_mangle]
 pub extern "C" fn rtree_create(tree: *mut *mut RTreeH, dim: u32) -> RTreeError {
     if tree.is_null() {
@@ -31,6 +32,7 @@ pub extern "C" fn rtree_create(tree: *mut *mut RTreeH, dim: u32) -> RTreeError {
     RTreeError::Success
 }
 
+/// Frees the given tree.
 #[no_mangle]
 pub extern "C" fn rtree_free(tree: *mut RTreeH) -> RTreeError {
     if tree.is_null() {
@@ -48,6 +50,7 @@ fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
     }
 }
 
+/// Returns the dimension of the tree.
 #[no_mangle]
 pub extern "C" fn rtree_get_dimension(tree: *const RTreeH, dim: *mut u32) -> RTreeError {
     if tree.is_null() || dim.is_null() {
@@ -92,6 +95,10 @@ fn _interval_tree_bulk_load(
     IntervalTree::bulk_load(mins, maxs, data)
 }
 
+/// Returns a new tree containing the given objects. The input arrays must have the same length.
+/// Returns an empty tree if the input arrays are empty.
+/// Supported dimensions are currently 1, 2, and 3. Returns an InvalidDimension error for unsupported dimensions.
+/// You must free the returned tree with `rtree_free`.
 #[no_mangle]
 pub extern "C" fn rtree_bulk_load(
     tree: *mut *mut RTreeH,
@@ -131,6 +138,9 @@ pub extern "C" fn rtree_bulk_load(
     RTreeError::Success
 }
 
+/// Returns the ids of all objects in the tree that contain the given point.
+/// If no objects contain the point, returns nids_out = 0.
+/// You must free the returned ids with `rtree_free_ids`.
 #[no_mangle]
 pub extern "C" fn rtree_locate_all_at_point(
     tree: *const RTreeH,
@@ -168,6 +178,8 @@ pub extern "C" fn rtree_locate_all_at_point(
     RTreeError::Success
 }
 
+/// Returns the size of the tree, defined as the number of objects in the tree.
+/// An empty tree has size 0.
 #[no_mangle]
 pub extern "C" fn rtree_size(tree: *const RTreeH, size_out: *mut usize) -> RTreeError {
     if tree.is_null() || size_out.is_null() {
@@ -207,6 +219,8 @@ fn _rtree_depth<T: RTreeObject>(node: &ParentNode<T>) -> usize {
         .unwrap_or(0)
 }
 
+/// Returns the depth of the tree, defined as the number of edges in the longest path from the root to a leaf.
+/// An empty tree has depth 0.
 #[no_mangle]
 pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTreeError {
     if tree.is_null() || depth_out.is_null() {
@@ -231,6 +245,7 @@ pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTr
     RTreeError::Success
 }
 
+/// Frees the ids returned by `rtree_locate_all_at_point`.
 #[no_mangle]
 pub extern "C" fn rtree_free_ids(ids: *mut usize, n: usize) -> RTreeError {
     if ids.is_null() {

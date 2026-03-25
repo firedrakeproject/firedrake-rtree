@@ -15,6 +15,8 @@ enum NodeRef {
 
 pub enum RTreeNodeH {}
 
+/// Returns the root node of a tree. You must free the returned node with `rtree_node_free`.
+/// If the tree is empty, returns an EmptyNode.
 #[no_mangle]
 pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNodeH) -> RTreeError {
     if tree.is_null() || node.is_null() {
@@ -40,6 +42,8 @@ pub extern "C" fn rtree_root_node(tree: *const RTreeH, node: *mut *mut RTreeNode
     RTreeError::Success
 }
 
+/// Returns the child nodes of a given node. You must free the returned child nodes with `rtree_node_children_free`.
+/// If the node is a leaf, or a root node of an empty tree, returns nchildren = 0.
 #[no_mangle]
 pub extern "C" fn rtree_node_children(
     node: *const RTreeNodeH,
@@ -115,6 +119,8 @@ fn write_aabb<const DIM: usize>(aabb: AABB<[f64; DIM]>, min_out: *mut f64, max_o
     }
 }
 
+/// Returns the minimum bounding box that covers all the boxes in the node.
+/// Returns an EmptyNodeEnvelope error if given a root node of an empty tree, which has no envelope.
 #[no_mangle]
 pub extern "C" fn rtree_node_envelope(
     node: *const RTreeNodeH,
@@ -146,6 +152,7 @@ pub extern "C" fn rtree_node_envelope(
     RTreeError::Success
 }
 
+/// Frees the node returned by `rtree_root_node`.
 #[no_mangle]
 pub extern "C" fn rtree_node_free(node: *mut RTreeNodeH) -> RTreeError {
     if node.is_null() {
@@ -155,6 +162,7 @@ pub extern "C" fn rtree_node_free(node: *mut RTreeNodeH) -> RTreeError {
     RTreeError::Success
 }
 
+/// Frees the child nodes returned by `rtree_node_children`.
 #[no_mangle]
 pub extern "C" fn rtree_node_children_free(children: *mut *mut RTreeNodeH, n: usize) -> RTreeError {
     if children.is_null() {
