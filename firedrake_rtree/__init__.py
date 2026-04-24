@@ -18,5 +18,5 @@ def get_lib() -> str:
 
 def get_lib_filename() -> str:
     """Return the path to the rtree-capi shared object."""
-    sufix = sysconfig.get_config_var("EXT_SUFFIX")
-    return os.path.join(get_lib(), f"firedrake_rtree{sufix}")
+    suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    return os.path.join(get_lib(), f"firedrake_rtree{suffix}")
