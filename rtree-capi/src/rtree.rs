@@ -178,6 +178,67 @@ pub extern "C" fn rtree_locate_all_at_point(
     RTreeError::Success
 }
 
+/// Returns the ids of all objects in the tree that contain each of the given points.
+/// `points` is an array of `n_points * dim` doubles
+/// The candidate ids are returned in `ids_out`, and `offsets_out`
+/// is an array of length `n_points + 1` such that the ids for point `i` are
+/// `ids_out[offsets_out[i]..offsets_out[i + 1]]`.
+/// You must free `ids_out` (with length `offsets_out[n_points]`) and `offsets_out`
+/// (with length `n_points + 1`) with `rtree_free_ids`.
+#[no_mangle]
+pub extern "C" fn rtree_locate_all_at_points(
+    tree: *const RTreeH,
+    points: *const f64,
+    n_points: usize,
+    ids_out: *mut *mut usize,
+    offsets_out: *mut *mut usize,
+) -> RTreeError {
+    if tree.is_null() || ids_out.is_null() || offsets_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    if n_points != 0 && points.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let dim = _rtree_get_dimension(rtree) as usize;
+
+    let mut ids: Vec<usize> = Vec::new();
+    let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
+    offsets.push(0);
+
+    if n_points != 0 {
+        let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
+        for i in 0..n_points {
+            let pt = &coords[i * dim..(i + 1) * dim];
+            match rtree {
+                RTreeDim::D1(tree) => ids.extend(tree.locate_all_at_point(pt[0])),
+                RTreeDim::D2(tree) => {
+                    let p: [f64; 2] = [pt[0], pt[1]];
+                    ids.extend(tree.locate_all_at_point(&p).map(|obj| obj.data));
+                }
+                RTreeDim::D3(tree) => {
+                    let p: [f64; 3] = [pt[0], pt[1], pt[2]];
+                    ids.extend(tree.locate_all_at_point(&p).map(|obj| obj.data));
+                }
+            }
+            offsets.push(ids.len());
+        }
+    }
+
+    let mut ids = ids.into_boxed_slice();
+    let mut offsets = offsets.into_boxed_slice();
+    let ids_ptr = ids.as_mut_ptr();
+    let offsets_ptr = offsets.as_mut_ptr();
+    std::mem::forget(ids);
+    std::mem::forget(offsets);
+
+    unsafe {
+        *ids_out = ids_ptr;
+        *offsets_out = offsets_ptr;
+    }
+    RTreeError::Success
+}
+
 /// Returns the size of the tree, defined as the number of objects in the tree.
 /// An empty tree has size 0.
 #[no_mangle]
