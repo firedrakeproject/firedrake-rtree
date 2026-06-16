@@ -1,5 +1,5 @@
 use rstar::primitives::{GeomWithData, Rectangle};
-use rstar::{ParentNode, RTree, RTreeNode, RTreeObject};
+use rstar::{ParentNode, RTree, RTreeNode, RTreeObject, AABB};
 use interval_tree::{IntervalTree, IntervalTreeNode};
 
 use crate::error::RTreeError;
@@ -208,8 +208,7 @@ fn _interval_tree_depth(node: &IntervalTreeNode) -> usize {
 }
 
 fn _rtree_depth<T: RTreeObject>(node: &ParentNode<T>) -> usize {
-    node
-        .children()
+    node.children()
         .iter()
         .map(|child| match child {
             RTreeNode::Leaf(_) => 1,
@@ -242,6 +241,136 @@ pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTr
         RTreeDim::D3(tree) => _rtree_depth(tree.root()),
     };
     unsafe { *depth_out = depth };
+    RTreeError::Success
+}
+
+fn collect_rtree_bounding_boxes<const DIM: usize>(
+    tree: &RTree<GeomWithData<Rectangle<[f64; DIM]>, usize>>,
+    level: usize,
+) -> Vec<AABB<[f64; DIM]>> {
+    if tree.size() == 0 {
+        return Vec::new();
+    }
+    let root = tree.root();
+    if level == 0 {
+        return vec![root.envelope()];
+    }
+
+    let mut nodes: Vec<&RTreeNode<GeomWithData<Rectangle<[f64; DIM]>, usize>>> =
+        root.children().iter().collect();
+
+    for _ in 1..level {
+        let mut next = Vec::new();
+
+        for node in &nodes {
+            if let RTreeNode::Parent(parent) = node {
+                next.extend(parent.children().iter());
+            }
+        }
+        if next.is_empty() {
+            break;
+        }
+        nodes = next;
+    }
+    nodes.into_iter().map(|node| node.envelope()).collect()
+}
+
+/// Returns bounding boxes at the specified level of the tree.
+#[no_mangle]
+pub extern "C" fn rtree_collect_bounding_boxes(
+    tree: *const RTreeH,
+    level: usize,
+    mins_out: *mut *mut f64,
+    maxs_out: *mut *mut f64,
+    n_boxes_out: *mut usize,
+) -> RTreeError {
+    if tree.is_null() || mins_out.is_null() || maxs_out.is_null() || n_boxes_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+
+    match rtree {
+        RTreeDim::D1(tree) => {
+            let boxes = tree.collect_intervals(level);
+            let n_boxes = boxes.len();
+            let mut mins = vec![0.0; n_boxes];
+            let mut maxs = vec![0.0; n_boxes];
+            for (i, (min, max)) in boxes.into_iter().enumerate() {
+                mins[i] = min;
+                maxs[i] = max;
+            }
+            let mins_ptr = mins.as_mut_ptr();
+            let maxs_ptr = maxs.as_mut_ptr();
+            std::mem::forget(mins);
+            std::mem::forget(maxs);
+            unsafe {
+                *mins_out = mins_ptr;
+                *maxs_out = maxs_ptr;
+                *n_boxes_out = n_boxes;
+            }
+        }
+        RTreeDim::D2(tree) => {
+            let boxes = collect_rtree_bounding_boxes::<2>(tree, level);
+            let n_boxes = boxes.len();
+            let mut mins = vec![0.0; n_boxes * 2];
+            let mut maxs = vec![0.0; n_boxes * 2];
+            for (i, aabb) in boxes.into_iter().enumerate() {
+                mins[i * 2..(i + 1) * 2].copy_from_slice(&aabb.lower());
+                maxs[i * 2..(i + 1) * 2].copy_from_slice(&aabb.upper());
+            }
+            let mins_ptr = mins.as_mut_ptr();
+            let maxs_ptr = maxs.as_mut_ptr();
+            std::mem::forget(mins);
+            std::mem::forget(maxs);
+            unsafe {
+                *mins_out = mins_ptr;
+                *maxs_out = maxs_ptr;
+                *n_boxes_out = n_boxes;
+            }
+        }
+        RTreeDim::D3(tree) => {
+            let boxes = collect_rtree_bounding_boxes::<3>(tree, level);
+            let n_boxes = boxes.len();
+            let mut mins = vec![0.0; n_boxes * 3];
+            let mut maxs = vec![0.0; n_boxes * 3];
+            for (i, aabb) in boxes.into_iter().enumerate() {
+                mins[i * 3..(i + 1) * 3].copy_from_slice(&aabb.lower());
+                maxs[i * 3..(i + 1) * 3].copy_from_slice(&aabb.upper());
+            }
+            let mins_ptr = mins.as_mut_ptr();
+            let maxs_ptr = maxs.as_mut_ptr();
+            std::mem::forget(mins);
+            std::mem::forget(maxs);
+            unsafe {
+                *mins_out = mins_ptr;
+                *maxs_out = maxs_ptr;
+                *n_boxes_out = n_boxes;
+            }
+        }
+    }
+    RTreeError::Success
+}
+
+/// Frees the bounding boxes returned by `rtree_collect_bounding_boxes`.
+#[no_mangle]
+pub extern "C" fn rtree_free_bounding_boxes(
+    mins: *mut f64,
+    maxs: *mut f64,
+    n_boxes: usize,
+    dim: usize,
+) -> RTreeError {
+    let Some(n) = n_boxes.checked_mul(dim) else {
+        return RTreeError::InvalidDimension;
+    };
+    if n > 0 && (mins.is_null() || maxs.is_null()) {
+        return RTreeError::NullPointer;
+    }
+    if !mins.is_null() {
+        unsafe { drop(Vec::from_raw_parts(mins, n, n)) };
+    }
+    if !maxs.is_null() {
+        unsafe { drop(Vec::from_raw_parts(maxs, n, n)) };
+    }
     RTreeError::Success
 }
 
