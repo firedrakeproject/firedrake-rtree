@@ -82,6 +82,21 @@ RTreeError rtree_locate_all_at_point(const struct RTreeH *tree,
                                      size_t *nids_out);
 
 /**
+ * Returns the ids of all objects in the tree that contain each of the given points.
+ * `points` is an array of `n_points * dim` doubles
+ * The candidate ids are returned in `ids_out`, and `offsets_out`
+ * is an array of length `n_points + 1` such that the ids for point `i` are
+ * `ids_out[offsets_out[i]..offsets_out[i + 1]]`.
+ * You must free `ids_out` (with length `offsets_out[n_points]`) and `offsets_out`
+ * (with length `n_points + 1`) with `rtree_free_ids`.
+ */
+RTreeError rtree_locate_all_at_points(const struct RTreeH *tree,
+                                      const double *points,
+                                      size_t n_points,
+                                      size_t **ids_out,
+                                      size_t **offsets_out);
+
+/**
  * Returns the child nodes of a given node. You must free the returned child nodes with `rtree_node_children_free`.
  * If the node is a leaf, or a root node of an empty tree, returns nchildren = 0.
  */

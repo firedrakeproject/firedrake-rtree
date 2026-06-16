@@ -792,6 +792,86 @@ bool test_rtree_depth(void) {
     return true;
 }
 
+bool test_locate_all_at_points(void) {
+    const size_t N = 2;
+    const uint32_t dim = 2;
+    double mins[4] = {0.0, 0.0, 1.0, 1.0};
+    double maxs[4] = {2.0, 2.0, 3.0, 3.0};
+    size_t ids[2] = {1, 2};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        return false;
+    }
+
+    const size_t n_points = 3;
+    double points[6] = {
+        1.5, 1.5,   // 2, 1
+        0.0, 0.0,   // 1
+        -1.0, 0.0,  // none
+    };
+
+    size_t *ids_out = NULL;
+    size_t *offsets_out = NULL;
+    RTreeError err = rtree_locate_all_at_points(tree, points, n_points, &ids_out, &offsets_out);
+    if (err != Success) {
+        fprintf(stderr, "rtree_locate_all_at_points returned error %d\n", err);
+        rtree_free(tree);
+        return false;
+    }
+
+    // offsets should be [0, 2, 3, 3].
+    size_t expected_offsets[4] = {0, 2, 3, 3};
+    for (size_t i = 0; i < n_points + 1; i++) {
+        if (offsets_out[i] != expected_offsets[i]) {
+            fprintf(stderr, "Expected offsets[%zu] = %zu, got %zu\n",
+                i, expected_offsets[i], offsets_out[i]);
+            rtree_free_ids(ids_out, offsets_out[n_points]);
+            rtree_free_ids(offsets_out, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+
+    size_t expected_ids[3] = {2, 1, 1};
+    for (size_t i = 0; i < offsets_out[n_points]; i++) {
+        if (ids_out[i] != expected_ids[i]) {
+            fprintf(stderr, "Expected ids[%zu] = %zu, got %zu\n",
+                i, expected_ids[i], ids_out[i]);
+            rtree_free_ids(ids_out, offsets_out[n_points]);
+            rtree_free_ids(offsets_out, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+
+    rtree_free_ids(ids_out, offsets_out[n_points]);
+    rtree_free_ids(offsets_out, n_points + 1);
+
+    // A zero-point query should return valid offsets = [0] and no ids.
+    size_t *ids_out0 = NULL;
+    size_t *offsets_out0 = NULL;
+    err = rtree_locate_all_at_points(tree, NULL, 0, &ids_out0, &offsets_out0);
+    if (err != Success) {
+        fprintf(stderr, "rtree_locate_all_at_points with 0 points returned error %d\n", err);
+        rtree_free(tree);
+        return false;
+    }
+    if (offsets_out0[0] != 0) {
+        fprintf(stderr, "Expected offsets[0] = 0 for zero-point query, got %zu\n", offsets_out0[0]);
+        rtree_free_ids(ids_out0, offsets_out0[0]);
+        rtree_free_ids(offsets_out0, 1);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free_ids(ids_out0, offsets_out0[0]);
+    rtree_free_ids(offsets_out0, 1);
+
+    rtree_free(tree);
+    return true;
+}
+
+
 void run_test(
     bool (test)(void),
     const char *test_name,
@@ -812,6 +892,7 @@ int main(void) {
     run_test(test_null, "test_null", &passed);
     run_test(test_get_dimension, "test_get_dimension", &passed);
     run_test(test_bulk_load, "test_bulk_load", &passed);
+    run_test(test_locate_all_at_points, "test_locate_all_at_points", &passed);
     run_test(test_nodes, "test_nodes", &passed);
     run_test(test_rtree_1d, "test_rtree_1d", &passed);
     run_test(test_rtree_node_1d, "test_rtree_node_1d", &passed);
