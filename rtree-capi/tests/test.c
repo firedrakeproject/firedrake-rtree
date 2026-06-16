@@ -205,6 +205,7 @@ bool test_nodes(void) {
         rtree_free(tree);
         return false;
     }
+    rtree_free_bounding_boxes(root_mins, root_maxs, nboxes_root, dim);
 
     RTreeNodeH **children = NULL;
     size_t nchildren = 0;
