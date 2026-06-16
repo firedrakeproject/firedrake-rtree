@@ -280,3 +280,26 @@ fn test_interval_tree_node_envelope() {
     assert_eq!(right_node.min, 0.5);
     assert_eq!(right_node.max, 2.0);
 }
+
+#[test]
+fn test_interval_tree_collect_intervals() {
+    let mins = vec![0.0, 0.5, 1.0, -1.0, -2.0];
+    let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
+    let ids = vec![0, 1, 2, 3, 4];
+    let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
+    let root = tree.root().unwrap();
+    let level0_intervals = tree.collect_intervals(0);
+    for (min, max) in level0_intervals {
+        assert_eq!(min, root.min);
+        assert_eq!(max, root.max);
+    }
+    let level1_intervals = tree.collect_intervals(1);
+    let left_node = root.left.as_ref().unwrap();
+    let right_node = root.right.as_ref().unwrap();
+    let expected_intervals = vec![(left_node.min, left_node.max), (right_node.min, right_node.max)];
+    for (index, (min, max)) in level1_intervals.iter().enumerate() {
+        let (expected_min, expected_max) = expected_intervals[index];
+        assert_eq!(*min, expected_min);
+        assert_eq!(*max, expected_max);
+    }
+}

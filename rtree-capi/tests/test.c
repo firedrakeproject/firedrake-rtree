@@ -186,6 +186,27 @@ bool test_nodes(void) {
         return false;
     }
 
+    double *root_mins = NULL;
+    double *root_maxs = NULL;
+    size_t nboxes_root = 0;
+    RTreeError err = rtree_collect_bounding_boxes(tree, 0, &root_mins, &root_maxs, &nboxes_root);
+    if (err != Success || nboxes_root != 1) {
+        fprintf(stderr, "Expected 1 collected bounding box at level 0, got %zu\n", nboxes_root);
+        rtree_free_bounding_boxes(root_mins, root_maxs, nboxes_root, dim);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    if (root_mins[0] != root_min[0] || root_mins[1] != root_min[1] ||
+        root_maxs[0] != root_max[0] || root_maxs[1] != root_max[1]) {
+        fprintf(stderr, "Expected collected bounding box at level 0 to match root envelope\n");
+        rtree_free_bounding_boxes(root_mins, root_maxs, nboxes_root, dim);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free_bounding_boxes(root_mins, root_maxs, nboxes_root, dim);
+
     RTreeNodeH **children = NULL;
     size_t nchildren = 0;
     rtree_node_children(root, &children, &nchildren);
@@ -219,6 +240,45 @@ bool test_nodes(void) {
         rtree_free(tree);
         return false;
     }
+
+    double *collected_mins = NULL;
+    double *collected_maxs = NULL;
+    size_t nboxes = 0;
+    RTreeError err1 = rtree_collect_bounding_boxes(tree, 1, &collected_mins, &collected_maxs, &nboxes);
+    if (err1 != Success || nboxes != nchildren) {
+        fprintf(stderr, "Expected %zu collected bounding boxes at level 1, got %zu\n",
+            nchildren, nboxes);
+        rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    bool found_child1 = false;
+    bool found_child2 = false;
+    for (size_t i = 0; i < nboxes; i++) {
+        if (collected_mins[2*i] == child1_min[0] &&
+            collected_mins[2*i + 1] == child1_min[1] &&
+            collected_maxs[2*i] == child1_max[0] &&
+            collected_maxs[2*i + 1] == child1_max[1]) {
+            found_child1 = true;
+        }
+        if (collected_mins[2*i] == child2_min[0] &&
+            collected_mins[2*i + 1] == child2_min[1] &&
+            collected_maxs[2*i] == child2_max[0] &&
+            collected_maxs[2*i + 1] == child2_max[1]) {
+            found_child2 = true;
+        }
+    }
+    if (!found_child1 || !found_child2) {
+        fprintf(stderr, "Expected collected bounding boxes to contain both child envelopes\n");
+        rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
 
     RTreeNodeH **child1children = NULL;
     size_t nchild1children = 0;
@@ -395,6 +455,39 @@ bool test_rtree_node_1d(void) {
         rtree_free(tree);
         return false;
     }
+
+    double *collected_mins = NULL;
+    double *collected_maxs = NULL;
+    size_t nboxes = 0;
+    RTreeError err = rtree_collect_bounding_boxes(tree, 1, &collected_mins, &collected_maxs, &nboxes);
+    if (err != Success || nboxes != nchildren) {
+        fprintf(stderr, "Expected %zu collected 1D bounding boxes at level 1, got %zu\n",
+            nchildren, nboxes);
+        rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    bool found_child1 = false;
+    bool found_child2 = false;
+    for (size_t i = 0; i < nboxes; i++) {
+        if (collected_mins[i] == child1_min[0] && collected_maxs[i] == child1_max[0]) {
+            found_child1 = true;
+        }
+        if (collected_mins[i] == child2_min[0] && collected_maxs[i] == child2_max[0]) {
+            found_child2 = true;
+        }
+    }
+    if (!found_child1 || !found_child2) {
+        fprintf(stderr, "Expected collected 1D bounding boxes to contain both child envelopes\n");
+        rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
+        rtree_node_children_free(children, nchildren);
+        rtree_node_free(root);
+        rtree_free(tree);
+        return false;
+    }
+    rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
 
     // Get children of child1 node
     RTreeNodeH **child1children = NULL;

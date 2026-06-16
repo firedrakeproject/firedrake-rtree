@@ -31,6 +31,15 @@ RTreeError rtree_bulk_load(struct RTreeH **tree,
                            uint32_t dim);
 
 /**
+ * Returns bounding boxes at the specified level of the tree.
+ */
+RTreeError rtree_collect_bounding_boxes(const struct RTreeH *tree,
+                                        size_t level,
+                                        double **mins_out,
+                                        double **maxs_out,
+                                        size_t *n_boxes_out);
+
+/**
  * Returns a new empty tree with the given dimension.
  */
 RTreeError rtree_create(struct RTreeH **tree, uint32_t dim);
@@ -46,6 +55,11 @@ RTreeError rtree_depth(const struct RTreeH *tree,
  * Frees the given tree.
  */
 RTreeError rtree_free(struct RTreeH *tree);
+
+/**
+ * Frees the bounding boxes returned by `rtree_collect_bounding_boxes`.
+ */
+RTreeError rtree_free_bounding_boxes(double *mins, double *maxs, size_t n_boxes, size_t dim);
 
 /**
  * Frees the ids returned by `rtree_locate_all_at_point`.
