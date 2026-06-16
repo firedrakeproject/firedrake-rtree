@@ -146,6 +146,30 @@ impl IntervalTree {
         result
     }
 
+    /// Returns all intervals at the specified level of the tree.
+    pub fn collect_intervals(&self, level: usize) -> Vec<(f64, f64)> {
+        let Some(root) = &self.root else {
+            return Vec::new();
+        };
+        let mut nodes = vec![root];
+        for _ in 0..level {
+            let mut next = Vec::new();
+            for node in &nodes {
+                if let Some(left) = &node.left {
+                    next.push(left.as_ref());
+                }
+                if let Some(right) = &node.right {
+                    next.push(right.as_ref());
+                }
+            }
+            if next.is_empty() {
+                break;
+            }
+            nodes = next
+        }
+        nodes.into_iter().map(|node| (node.min, node.max)).collect()
+    }
+
     /// Returns the number of intervals in the tree.
     #[must_use]
     pub fn size(&self) -> usize {
