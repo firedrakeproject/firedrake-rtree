@@ -7,7 +7,7 @@ edition = "2021"
 python = ["pyo3"]
 
 [dependencies]
-rstar = "0.12.2"
+rstar = "0.13.0"
 interval-tree = { path = "../interval-tree" }
 pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
 
