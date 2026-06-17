@@ -4,8 +4,8 @@ use interval_tree::{IntervalTree, IntervalTreeNode};
 
 use crate::error::RTreeError;
 
-pub type Object2D = GeomWithData<Rectangle<[f64; 2]>, usize>;
-pub type Object3D = GeomWithData<Rectangle<[f64; 3]>, usize>;
+pub type Object2D = GeomWithData<Rectangle<[f64; 2]>, i64>;
+pub type Object3D = GeomWithData<Rectangle<[f64; 3]>, i64>;
 
 pub enum RTreeDim {
     D1(IntervalTree),
@@ -42,7 +42,7 @@ pub extern "C" fn rtree_free(tree: *mut RTreeH) -> RTreeError {
     RTreeError::Success
 }
 
-fn _rtree_get_dimension(tree: &RTreeDim) -> u32 {
+fn _rtree_get_dimension(tree: &RTreeDim) -> usize {
     match tree {
         RTreeDim::D1(_) => 1,
         RTreeDim::D2(_) => 2,
@@ -57,16 +57,16 @@ pub extern "C" fn rtree_get_dimension(tree: *const RTreeH, dim: *mut u32) -> RTr
         return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
-    unsafe { *dim = _rtree_get_dimension(rtree) };
+    unsafe { *dim = _rtree_get_dimension(rtree) as u32 };
     RTreeError::Success
 }
 
 fn _rtree_bulk_load<const DIM: usize>(
     mins: *const f64,
     maxs: *const f64,
-    data: *const usize,
+    data: *const i64,
     n: usize,
-) -> RTree<GeomWithData<Rectangle<[f64; DIM]>, usize>> {
+) -> RTree<GeomWithData<Rectangle<[f64; DIM]>, i64>> {
     let mins = unsafe { std::slice::from_raw_parts(mins, n * DIM) };
     let maxs = unsafe { std::slice::from_raw_parts(maxs, n * DIM) };
     let data = unsafe { std::slice::from_raw_parts(data, n) };
@@ -85,7 +85,7 @@ fn _rtree_bulk_load<const DIM: usize>(
 fn _interval_tree_bulk_load(
     mins: *const f64,
     maxs: *const f64,
-    data: *const usize,
+    data: *const i64,
     n: usize,
 ) -> IntervalTree {
     let mins = unsafe { std::slice::from_raw_parts(mins, n) };
@@ -104,7 +104,7 @@ pub extern "C" fn rtree_bulk_load(
     tree: *mut *mut RTreeH,
     mins: *const f64,
     maxs: *const f64,
-    ids: *const usize,
+    ids: *const i64,
     n: usize,
     dim: u32,
 ) -> RTreeError {
@@ -145,14 +145,14 @@ pub extern "C" fn rtree_bulk_load(
 pub extern "C" fn rtree_locate_all_at_point(
     tree: *const RTreeH,
     point: *const f64,
-    ids_out: *mut *mut usize,
+    ids_out: *mut *mut i64,
     nids_out: *mut usize,
 ) -> RTreeError {
     if tree.is_null() || point.is_null() || ids_out.is_null() || nids_out.is_null() {
         return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
-    let mut ids: Vec<usize> = match rtree {
+    let mut ids: Vec<i64> = match rtree {
         RTreeDim::D1(tree) => {
             let p: f64 = unsafe { *point };
             tree.locate_all_at_point(p)
@@ -183,14 +183,14 @@ pub extern "C" fn rtree_locate_all_at_point(
 /// The candidate ids are returned in `ids_out`, and `offsets_out`
 /// is an array of length `n_points + 1` such that the ids for point `i` are
 /// `ids_out[offsets_out[i]..offsets_out[i + 1]]`.
-/// You must free `ids_out` (with length `offsets_out[n_points]`) and `offsets_out`
-/// (with length `n_points + 1`) with `rtree_free_ids`.
+/// You must free `ids_out` (with length `offsets_out[n_points]`) with `rtree_free_ids`,
+/// and `offsets_out` (with length `n_points + 1`) with `rtree_free_offsets`.
 #[no_mangle]
 pub extern "C" fn rtree_locate_all_at_points(
     tree: *const RTreeH,
     points: *const f64,
     n_points: usize,
-    ids_out: *mut *mut usize,
+    ids_out: *mut *mut i64,
     offsets_out: *mut *mut usize,
 ) -> RTreeError {
     if tree.is_null() || ids_out.is_null() || offsets_out.is_null() {
@@ -200,9 +200,9 @@ pub extern "C" fn rtree_locate_all_at_points(
         return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
-    let dim = _rtree_get_dimension(rtree) as usize;
+    let dim = _rtree_get_dimension(rtree);
 
-    let mut ids: Vec<usize> = Vec::new();
+    let mut ids: Vec<i64> = Vec::new();
     let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
     offsets.push(0);
 
@@ -306,7 +306,7 @@ pub extern "C" fn rtree_depth(tree: *const RTreeH, depth_out: *mut usize) -> RTr
 }
 
 fn collect_rtree_bounding_boxes<const DIM: usize>(
-    tree: &RTree<GeomWithData<Rectangle<[f64; DIM]>, usize>>,
+    tree: &RTree<GeomWithData<Rectangle<[f64; DIM]>, i64>>,
     level: usize,
 ) -> Vec<AABB<[f64; DIM]>> {
     if tree.size() == 0 {
@@ -317,7 +317,7 @@ fn collect_rtree_bounding_boxes<const DIM: usize>(
         return vec![root.envelope()];
     }
 
-    let mut nodes: Vec<&RTreeNode<GeomWithData<Rectangle<[f64; DIM]>, usize>>> =
+    let mut nodes: Vec<&RTreeNode<GeomWithData<Rectangle<[f64; DIM]>, i64>>> =
         root.children().iter().collect();
 
     for _ in 1..level {
@@ -418,9 +418,9 @@ pub extern "C" fn rtree_free_bounding_boxes(
     mins: *mut f64,
     maxs: *mut f64,
     n_boxes: usize,
-    dim: usize,
+    dim: u32,
 ) -> RTreeError {
-    let Some(n) = n_boxes.checked_mul(dim) else {
+    let Some(n) = n_boxes.checked_mul(dim as usize) else {
         return RTreeError::InvalidDimension;
     };
     if n > 0 && (mins.is_null() || maxs.is_null()) {
@@ -437,10 +437,20 @@ pub extern "C" fn rtree_free_bounding_boxes(
 
 /// Frees the ids returned by `rtree_locate_all_at_point`.
 #[no_mangle]
-pub extern "C" fn rtree_free_ids(ids: *mut usize, n: usize) -> RTreeError {
+pub extern "C" fn rtree_free_ids(ids: *mut i64, n: usize) -> RTreeError {
     if ids.is_null() {
         return RTreeError::NullPointer;
     }
     unsafe { drop(Vec::from_raw_parts(ids, n, n)) };
+    RTreeError::Success
+}
+
+/// Frees the offsets returned by `rtree_locate_all_at_points`.
+#[no_mangle]
+pub extern "C" fn rtree_free_offsets(offsets: *mut usize, n: usize) -> RTreeError {
+    if offsets.is_null() {
+        return RTreeError::NullPointer;
+    }
+    unsafe { drop(Vec::from_raw_parts(offsets, n, n)) };
     RTreeError::Success
 }

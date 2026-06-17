@@ -26,7 +26,7 @@ typedef struct RTreeNodeH RTreeNodeH;
 RTreeError rtree_bulk_load(struct RTreeH **tree,
                            const double *mins,
                            const double *maxs,
-                           const size_t *ids,
+                           const int64_t *ids,
                            size_t n,
                            uint32_t dim);
 
@@ -59,12 +59,17 @@ RTreeError rtree_free(struct RTreeH *tree);
 /**
  * Frees the bounding boxes returned by `rtree_collect_bounding_boxes`.
  */
-RTreeError rtree_free_bounding_boxes(double *mins, double *maxs, size_t n_boxes, size_t dim);
+RTreeError rtree_free_bounding_boxes(double *mins, double *maxs, size_t n_boxes, uint32_t dim);
 
 /**
  * Frees the ids returned by `rtree_locate_all_at_point`.
  */
-RTreeError rtree_free_ids(size_t *ids, size_t n);
+RTreeError rtree_free_ids(int64_t *ids, size_t n);
+
+/**
+ * Frees the offsets returned by `rtree_locate_all_at_points`.
+ */
+RTreeError rtree_free_offsets(size_t *offsets, size_t n);
 
 /**
  * Returns the dimension of the tree.
@@ -78,7 +83,7 @@ RTreeError rtree_get_dimension(const struct RTreeH *tree, uint32_t *dim);
  */
 RTreeError rtree_locate_all_at_point(const struct RTreeH *tree,
                                      const double *point,
-                                     size_t **ids_out,
+                                     int64_t **ids_out,
                                      size_t *nids_out);
 
 /**
@@ -87,13 +92,13 @@ RTreeError rtree_locate_all_at_point(const struct RTreeH *tree,
  * The candidate ids are returned in `ids_out`, and `offsets_out`
  * is an array of length `n_points + 1` such that the ids for point `i` are
  * `ids_out[offsets_out[i]..offsets_out[i + 1]]`.
- * You must free `ids_out` (with length `offsets_out[n_points]`) and `offsets_out`
- * (with length `n_points + 1`) with `rtree_free_ids`.
+ * You must free `ids_out` (with length `offsets_out[n_points]`) with `rtree_free_ids`,
+ * and `offsets_out` (with length `n_points + 1`) with `rtree_free_offsets`.
  */
 RTreeError rtree_locate_all_at_points(const struct RTreeH *tree,
                                       const double *points,
                                       size_t n_points,
-                                      size_t **ids_out,
+                                      int64_t **ids_out,
                                       size_t **offsets_out);
 
 /**
