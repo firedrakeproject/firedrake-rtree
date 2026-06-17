@@ -246,9 +246,9 @@ fn test_interval_tree_large_nonoverlapping() {
     let n = 500_000;
     let mins: Vec<f64> = (0..n).map(|i| i as f64 * 2.0).collect();
     let maxs: Vec<f64> = (0..n).map(|i| i as f64 * 2.0 + 1.0).collect();
-    let ids: Vec<usize> = (0..n).collect();
+    let ids: Vec<i64> = (0..n).collect();
     let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
-    assert_eq!(tree.size(), n);
+    assert_eq!(tree.size(), n.try_into().unwrap());
 
     let mut rng = SmallRng::seed_from_u64(0);
     for _ in 0..100_000 {

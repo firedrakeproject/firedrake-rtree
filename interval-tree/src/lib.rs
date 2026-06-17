@@ -7,8 +7,8 @@ pub struct IntervalTreeNode {
     pub max: f64,
     pub left: Option<Box<IntervalTreeNode>>,
     pub right: Option<Box<IntervalTreeNode>>,
-    pub overlapping_by_min: Vec<(f64, f64, usize)>,
-    pub overlapping_by_max: Vec<(f64, f64, usize)>,
+    pub overlapping_by_min: Vec<(f64, f64, i64)>,
+    pub overlapping_by_max: Vec<(f64, f64, i64)>,
 }
 
 /// Builds an interval tree node from a list of intervals. Each interval is represented as a tuple of (min, max, id).
@@ -16,7 +16,7 @@ pub struct IntervalTreeNode {
 /// # Panics
 ///
 /// Panics if the input list of intervals is empty.
-fn build_node(intervals: Vec<(f64, f64, usize)>) -> IntervalTreeNode {
+fn build_node(intervals: Vec<(f64, f64, i64)>) -> IntervalTreeNode {
     // This follows the algorithm described in https://en.wikipedia.org/wiki/Interval_tree
     assert!(
         !intervals.is_empty(),
@@ -94,7 +94,7 @@ impl IntervalTree {
     ///
     /// Panics if the input arrays have different lengths.
     #[must_use]
-    pub fn bulk_load(mins: &[f64], maxs: &[f64], ids: &[usize]) -> Self {
+    pub fn bulk_load(mins: &[f64], maxs: &[f64], ids: &[i64]) -> Self {
         let n = mins.len();
         assert!(
             n == maxs.len() && n == ids.len(),
@@ -103,7 +103,7 @@ impl IntervalTree {
         if n == 0 {
             return Self::new();
         }
-        let elements: Vec<(f64, f64, usize)> = (0..n).map(|i| (mins[i], maxs[i], ids[i])).collect();
+        let elements: Vec<(f64, f64, i64)> = (0..n).map(|i| (mins[i], maxs[i], ids[i])).collect();
         Self {
             root: Some(build_node(elements)),
             size: n,
@@ -113,7 +113,7 @@ impl IntervalTree {
     /// Locates all intervals that contain the given point `p`. Returns a vector of the ids of the matching intervals.
     /// Returns an empty vector if no intervals contain the point.
     #[must_use]
-    pub fn locate_all_at_point(&self, p: f64) -> Vec<usize> {
+    pub fn locate_all_at_point(&self, p: f64) -> Vec<i64> {
         // Pre-order traversal of the interval tree
         let mut result = Vec::new();
         let mut stack = Vec::new();
