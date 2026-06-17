@@ -152,7 +152,7 @@ pub extern "C" fn rtree_locate_all_at_point(
         return RTreeError::NullPointer;
     }
     let rtree = unsafe { &*(tree as *const RTreeDim) };
-    let mut ids: Vec<i64> = match rtree {
+    let ids: Vec<i64> = match rtree {
         RTreeDim::D1(tree) => {
             let p: f64 = unsafe { *point };
             tree.locate_all_at_point(p)
@@ -168,6 +168,7 @@ pub extern "C" fn rtree_locate_all_at_point(
     };
 
     let n = ids.len();
+    let mut ids = ids.into_boxed_slice();
     let ptr = ids.as_mut_ptr();
     std::mem::forget(ids);
 
