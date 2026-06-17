@@ -296,7 +296,10 @@ fn test_interval_tree_collect_intervals() {
     let level1_intervals = tree.collect_intervals(1);
     let left_node = root.left.as_ref().unwrap();
     let right_node = root.right.as_ref().unwrap();
-    let expected_intervals = vec![(left_node.min, left_node.max), (right_node.min, right_node.max)];
+    let expected_intervals = vec![
+        (left_node.min, left_node.max),
+        (right_node.min, right_node.max),
+    ];
     for (index, (min, max)) in level1_intervals.iter().enumerate() {
         let (expected_min, expected_max) = expected_intervals[index];
         assert_eq!(*min, expected_min);

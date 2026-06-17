@@ -11,7 +11,11 @@ fn c_api() {
     let test_binary = lib_dir.join("test_c_api");
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
     let build_status = Command::new(&cargo)
-        .args(["build", "--manifest-path", manifest_dir.join("Cargo.toml").to_str().unwrap()])
+        .args([
+            "build",
+            "--manifest-path",
+            manifest_dir.join("Cargo.toml").to_str().unwrap(),
+        ])
         .status()
         .expect("Failed to build cdylib");
     assert!(build_status.success(), "cdylib build failed");

@@ -1,6 +1,6 @@
+use interval_tree::{IntervalTree, IntervalTreeNode};
 use rstar::primitives::{GeomWithData, Rectangle};
 use rstar::{ParentNode, RTree, RTreeNode, RTreeObject, AABB};
-use interval_tree::{IntervalTree, IntervalTreeNode};
 
 use crate::error::RTreeError;
 

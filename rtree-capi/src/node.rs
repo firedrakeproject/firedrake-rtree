@@ -1,5 +1,5 @@
-use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
 use interval_tree::IntervalTreeNode;
+use rstar::{ParentNode, RTreeNode, RTreeObject, AABB};
 
 use crate::error::RTreeError;
 use crate::rtree::{Object2D, Object3D, RTreeDim, RTreeH};
@@ -10,7 +10,7 @@ enum NodeRef {
     Parent3D(*const ParentNode<Object3D>),
     Node2D(*const RTreeNode<Object2D>),
     Node3D(*const RTreeNode<Object3D>),
-    EmptyNode,  // root node of empty tree
+    EmptyNode, // root node of empty tree
 }
 
 pub enum RTreeNodeH {}
@@ -142,7 +142,7 @@ pub extern "C" fn rtree_node_envelope(
                 *min_out = min;
                 *max_out = max;
             }
-        },
+        }
         NodeRef::Parent2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Parent3D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
         NodeRef::Node2D(ptr) => write_aabb(unsafe { &**ptr }.envelope(), min_out, max_out),
