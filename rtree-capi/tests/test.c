@@ -87,7 +87,7 @@ bool test_bulk_load(void) {
     const uint32_t dim = 2;
     double mins[4] = {0.0, 0.0, 1.0, 1.0};
     double maxs[4] = {2.0, 2.0, 3.0, 3.0};
-    size_t ids[2] = {1, 2};
+    int64_t ids[2] = {1, 2};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -115,7 +115,7 @@ bool test_bulk_load(void) {
     double point2[2] = {0.0, 0.0};
     double point3[2] = {-1.0, 0.0};
 
-    size_t *ids_out1 = NULL;
+    int64_t *ids_out1 = NULL;
     size_t nids_out1 = 0;
     rtree_locate_all_at_point(tree, point1, &ids_out1, &nids_out1);
     if (nids_out1 != 2 || ids_out1[0] != 2 || ids_out1[1] != 1) {
@@ -127,7 +127,7 @@ bool test_bulk_load(void) {
         rtree_free_ids(ids_out1, nids_out1);
     }
 
-    size_t *ids_out2 = NULL;
+    int64_t *ids_out2 = NULL;
     size_t nids_out2 = 0;
     rtree_locate_all_at_point(tree, point2, &ids_out2, &nids_out2);
     if (nids_out2 != 1 || ids_out2[0] != 1) {
@@ -139,7 +139,7 @@ bool test_bulk_load(void) {
         rtree_free_ids(ids_out2, nids_out2);
     }
 
-    size_t *ids_out3 = NULL;
+    int64_t *ids_out3 = NULL;
     size_t nids_out3 = 0;
     rtree_locate_all_at_point(tree, point3, &ids_out3, &nids_out3);
     if (nids_out3 != 0) {
@@ -161,7 +161,7 @@ bool test_nodes(void) {
     const uint32_t dim = 2;
     double mins[4] = {0.0, 0.0, 1.0, 1.0};
     double maxs[4] = {2.0, 2.0, 3.0, 3.0};
-    size_t ids[2] = {1, 2};
+    int64_t ids[2] = {1, 2};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -305,7 +305,7 @@ bool test_rtree_1d(void) {
     const uint32_t dim = 1;
     double mins[4] = {0.0, 1.0, 2.0, 3.0};
     double maxs[4] = {1.0, 2.0, 4.0, 4.0};
-    size_t ids[4] = {1, 2, 3, 4};
+    int64_t ids[4] = {1, 2, 3, 4};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -335,7 +335,7 @@ bool test_rtree_1d(void) {
     double point3[1] = {3.5};
     double point4[1] = {4.5};
 
-    size_t *ids_out1 = NULL;
+    int64_t *ids_out1 = NULL;
     size_t nids_out1 = 0;
     rtree_locate_all_at_point(tree, point1, &ids_out1, &nids_out1);
     if (nids_out1 != 1 || ids_out1[0] != 1) {
@@ -347,7 +347,7 @@ bool test_rtree_1d(void) {
         rtree_free_ids(ids_out1, nids_out1);
     }
 
-    size_t *ids_out2 = NULL;
+    int64_t *ids_out2 = NULL;
     size_t nids_out2 = 0;
     rtree_locate_all_at_point(tree, point2, &ids_out2, &nids_out2);
     if (nids_out2 != 1 || ids_out2[0] != 2) {
@@ -359,7 +359,7 @@ bool test_rtree_1d(void) {
         rtree_free_ids(ids_out2, nids_out2);
     }
 
-    size_t *ids_out3 = NULL;
+    int64_t *ids_out3 = NULL;
     size_t nids_out3 = 0;
     rtree_locate_all_at_point(tree, point3, &ids_out3, &nids_out3);
     if (nids_out3 != 2 || ids_out3[1] != 4 || ids_out3[0] != 3) {
@@ -371,7 +371,7 @@ bool test_rtree_1d(void) {
         rtree_free_ids(ids_out3, nids_out3);
     }
     
-    size_t *ids_out4 = NULL;
+    int64_t *ids_out4 = NULL;
     size_t nids_out4 = 0;
     rtree_locate_all_at_point(tree, point4, &ids_out4, &nids_out4);
     if (nids_out4 != 0) {
@@ -392,7 +392,7 @@ bool test_rtree_node_1d(void) {
     const uint32_t dim = 1;
     double mins[5] = {0.0, 0.5, 1.0, -1.0, -2.0};
     double maxs[5] = {1.0, 1.5, 2.0, 0.5, -1.0};
-    size_t ids[5] = {0, 1, 2, 3, 4};
+    int64_t ids[5] = {0, 1, 2, 3, 4};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -514,7 +514,7 @@ bool test_rtree_empty(void) {
     const uint32_t dim = 2;
     double *mins = NULL;
     double *maxs = NULL;
-    size_t *ids = NULL;
+    int64_t *ids = NULL;
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -541,7 +541,7 @@ bool test_rtree_empty(void) {
 
     // Query empty tree
     double point[2] = {0.0, 0.0};
-    size_t *ids_out = NULL;
+    int64_t *ids_out = NULL;
     size_t nids_out = 0;
     rtree_locate_all_at_point(tree, point, &ids_out, &nids_out);
     if (nids_out != 0) {
@@ -605,7 +605,7 @@ bool test_rtree_empty_1d(void) {
     const uint32_t dim = 1;
     double *mins = NULL;
     double *maxs = NULL;
-    size_t *ids = NULL;
+    int64_t *ids = NULL;
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -631,7 +631,7 @@ bool test_rtree_empty_1d(void) {
 
     // Query empty tree
     double point[1] = {0.0};
-    size_t *ids_out = NULL;
+    int64_t *ids_out = NULL;
     size_t nids_out = 0;
     rtree_locate_all_at_point(tree, point, &ids_out, &nids_out);
     if (nids_out != 0) {
@@ -693,7 +693,7 @@ bool test_rtree_singleton_depth(void) {
     const uint32_t dim = 2;
     double mins[2] = {0.0, 0.0};
     double maxs[2] = {1.0, 1.0};
-    size_t ids[1] = {1};
+    int64_t ids[1] = {1};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -740,7 +740,7 @@ bool test_rtree_depth(void) {
     const uint32_t dim = 2;
     double mins[12];
     double maxs[12];
-    size_t ids[6];
+    int64_t ids[6];
     for (size_t i = 0; i < N; i++) {
         mins[2*i] = (double)i;
         mins[2*i + 1] = (double)i;
@@ -766,7 +766,7 @@ bool test_rtree_depth(void) {
     const size_t N1 = 7;
     double mins1[14];
     double maxs1[14];
-    size_t ids1[7];
+    int64_t ids1[7];
     for (size_t i = 0; i < N1; i++) {
         mins1[2*i] = (double)i;
         mins1[2*i + 1] = (double)i;
@@ -797,7 +797,7 @@ bool test_locate_all_at_points(void) {
     const uint32_t dim = 2;
     double mins[4] = {0.0, 0.0, 1.0, 1.0};
     double maxs[4] = {2.0, 2.0, 3.0, 3.0};
-    size_t ids[2] = {1, 2};
+    int64_t ids[2] = {1, 2};
     RTreeH *tree = NULL;
     rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
     if (tree == NULL) {
@@ -811,7 +811,7 @@ bool test_locate_all_at_points(void) {
         -1.0, 0.0,  // none
     };
 
-    size_t *ids_out = NULL;
+    int64_t *ids_out = NULL;
     size_t *offsets_out = NULL;
     RTreeError err = rtree_locate_all_at_points(tree, points, n_points, &ids_out, &offsets_out);
     if (err != Success) {
@@ -827,29 +827,29 @@ bool test_locate_all_at_points(void) {
             fprintf(stderr, "Expected offsets[%zu] = %zu, got %zu\n",
                 i, expected_offsets[i], offsets_out[i]);
             rtree_free_ids(ids_out, offsets_out[n_points]);
-            rtree_free_ids(offsets_out, n_points + 1);
+            rtree_free_offsets(offsets_out, n_points + 1);
             rtree_free(tree);
             return false;
         }
     }
 
-    size_t expected_ids[3] = {2, 1, 1};
+    int64_t expected_ids[3] = {2, 1, 1};
     for (size_t i = 0; i < offsets_out[n_points]; i++) {
         if (ids_out[i] != expected_ids[i]) {
-            fprintf(stderr, "Expected ids[%zu] = %zu, got %zu\n",
+            fprintf(stderr, "Expected ids[%zu] = %lld, got %lld\n",
                 i, expected_ids[i], ids_out[i]);
             rtree_free_ids(ids_out, offsets_out[n_points]);
-            rtree_free_ids(offsets_out, n_points + 1);
+            rtree_free_offsets(offsets_out, n_points + 1);
             rtree_free(tree);
             return false;
         }
     }
 
     rtree_free_ids(ids_out, offsets_out[n_points]);
-    rtree_free_ids(offsets_out, n_points + 1);
+    rtree_free_offsets(offsets_out, n_points + 1);
 
     // A zero-point query should return valid offsets = [0] and no ids.
-    size_t *ids_out0 = NULL;
+    int64_t *ids_out0 = NULL;
     size_t *offsets_out0 = NULL;
     err = rtree_locate_all_at_points(tree, NULL, 0, &ids_out0, &offsets_out0);
     if (err != Success) {
@@ -860,12 +860,12 @@ bool test_locate_all_at_points(void) {
     if (offsets_out0[0] != 0) {
         fprintf(stderr, "Expected offsets[0] = 0 for zero-point query, got %zu\n", offsets_out0[0]);
         rtree_free_ids(ids_out0, offsets_out0[0]);
-        rtree_free_ids(offsets_out0, 1);
+        rtree_free_offsets(offsets_out0, 1);
         rtree_free(tree);
         return false;
     }
     rtree_free_ids(ids_out0, offsets_out0[0]);
-    rtree_free_ids(offsets_out0, 1);
+    rtree_free_offsets(offsets_out0, 1);
 
     rtree_free(tree);
     return true;
