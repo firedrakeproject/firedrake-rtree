@@ -159,11 +159,11 @@ pub extern "C" fn rtree_locate_all_at_point(
         }
         RTreeDim::D2(tree) => {
             let p: [f64; 2] = unsafe { *(point as *const [f64; 2]) };
-            tree.locate_all_at_point(&p).map(|obj| obj.data).collect()
+            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
         }
         RTreeDim::D3(tree) => {
             let p: [f64; 3] = unsafe { *(point as *const [f64; 3]) };
-            tree.locate_all_at_point(&p).map(|obj| obj.data).collect()
+            tree.locate_all_at_point(p).map(|obj| obj.data).collect()
         }
     };
 
@@ -215,11 +215,11 @@ pub extern "C" fn rtree_locate_all_at_points(
                 RTreeDim::D1(tree) => ids.extend(tree.locate_all_at_point(pt[0])),
                 RTreeDim::D2(tree) => {
                     let p: [f64; 2] = [pt[0], pt[1]];
-                    ids.extend(tree.locate_all_at_point(&p).map(|obj| obj.data));
+                    ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
                 }
                 RTreeDim::D3(tree) => {
                     let p: [f64; 3] = [pt[0], pt[1], pt[2]];
-                    ids.extend(tree.locate_all_at_point(&p).map(|obj| obj.data));
+                    ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
                 }
             }
             offsets.push(ids.len());
