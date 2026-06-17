@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "rtree-capi.h"
 
@@ -836,7 +837,7 @@ bool test_locate_all_at_points(void) {
     int64_t expected_ids[3] = {2, 1, 1};
     for (size_t i = 0; i < offsets_out[n_points]; i++) {
         if (ids_out[i] != expected_ids[i]) {
-            fprintf(stderr, "Expected ids[%zu] = %lld, got %lld\n",
+            fprintf(stderr, "Expected ids[%zu] = %" PRId64 ", got %" PRId64 "\n",
                 i, expected_ids[i], ids_out[i]);
             rtree_free_ids(ids_out, offsets_out[n_points]);
             rtree_free_offsets(offsets_out, n_points + 1);
