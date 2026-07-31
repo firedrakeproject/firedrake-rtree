@@ -124,8 +124,6 @@ jobs:
     name: Publish to PyPI
     needs: [linux_wheel, macos_wheel, sdist]
     runs-on: ubuntu-latest
-    # UNDO ME
-    if: false
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v7
@@ -142,8 +140,6 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
   github_release:
-    # UNDO ME
-    if: false
     name: Create GitHub release
     needs: pypi
     runs-on: ubuntu-latest
