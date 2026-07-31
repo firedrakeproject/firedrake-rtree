@@ -1,6 +1,7 @@
 [package]
 name = "rtree-capi"
-version = "2026.2.0"
+# TODO RELEASE
+version = "2026.3.dev0"
 edition = "2021"
 
 [features]
