@@ -101,6 +101,12 @@ RTreeError rtree_locate_all_at_points(const struct RTreeH *tree,
                                       int64_t **ids_out,
                                       size_t **offsets_out);
 
+RTreeError rtree_locate_all_at_points_unique(const struct RTreeH *tree,
+                                             const double *points,
+                                             size_t n_points,
+                                             int64_t **ids_out,
+                                             size_t **offsets_out);
+
 /**
  * Returns the child nodes of a given node. You must free the returned child nodes with `rtree_node_children_free`.
  * If the node is a leaf, or a root node of an empty tree, returns nchildren = 0.
