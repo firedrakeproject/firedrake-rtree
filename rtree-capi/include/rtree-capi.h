@@ -62,7 +62,7 @@ RTreeError rtree_free(struct RTreeH *tree);
 RTreeError rtree_free_bounding_boxes(double *mins, double *maxs, size_t n_boxes, uint32_t dim);
 
 /**
- * Frees the ids returned by `rtree_locate_all_at_point`.
+ * Frees the ids returned by `rtree_locate_all_at_points`.
  */
 RTreeError rtree_free_ids(int64_t *ids, size_t n);
 
@@ -101,6 +101,12 @@ RTreeError rtree_locate_all_at_points(const struct RTreeH *tree,
                                       int64_t **ids_out,
                                       size_t **offsets_out);
 
+/**
+ * Returns the unique IDs of objects containing each point.
+ * IDs are sorted in ascending order within each point's offset.
+ * Only useful if your RTree contains multiple bounding boxes sharing the same ID.
+ * You must free `ids_out` with `rtree_free_ids` and `offsets_out` with `rtree_free_offsets`.
+ */
 RTreeError rtree_locate_all_at_points_unique(const struct RTreeH *tree,
                                              const double *points,
                                              size_t n_points,

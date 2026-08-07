@@ -293,6 +293,10 @@ pub extern "C" fn rtree_locate_all_at_points(
     )
 }
 
+/// Returns the unique IDs of objects containing each point.
+/// IDs are sorted in ascending order within each point's offset.
+/// Only useful if your RTree contains multiple bounding boxes sharing the same ID.
+/// You must free `ids_out` with `rtree_free_ids` and `offsets_out` with `rtree_free_offsets`.
 #[no_mangle]
 pub extern "C" fn rtree_locate_all_at_points_unique(
     tree: *const RTreeH,
@@ -507,7 +511,7 @@ pub extern "C" fn rtree_free_bounding_boxes(
     RTreeError::Success
 }
 
-/// Frees the ids returned by `rtree_locate_all_at_point`.
+/// Frees the ids returned by `rtree_locate_all_at_points`.
 #[no_mangle]
 pub extern "C" fn rtree_free_ids(ids: *mut i64, n: usize) -> RTreeError {
     if ids.is_null() {
