@@ -179,95 +179,6 @@ pub extern "C" fn rtree_locate_all_at_point(
     RTreeError::Success
 }
 
-fn _locate_points_bulk(
-    tree: &RTreeDim,
-    coords: &[f64],
-    deduplicate: bool,
-) -> (Vec<i64>, Vec<usize>) {
-    let dim = _rtree_get_dimension(tree);
-    let n_points = coords.len() / dim;
-    let mut ids: Vec<i64> = Vec::new();
-    let mut point_ids: Vec<i64> = Vec::new();
-    let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
-    offsets.push(0);
-
-    for point in coords.chunks_exact(dim) {
-        match tree {
-            RTreeDim::D1(tree) => {
-                _append_point_ids(&mut ids, &mut point_ids, tree.locate_all_at_point(point[0]), deduplicate);
-            }
-            RTreeDim::D2(tree) => {
-                let p: [f64; 2] = [point[0], point[1]];
-                _append_point_ids(&mut ids, &mut point_ids, tree.locate_all_at_point(p).map(|obj| obj.data), deduplicate);
-            }
-            RTreeDim::D3(tree) => {
-                let p: [f64; 3] = [point[0], point[1], point[2]];
-                _append_point_ids(&mut ids, &mut point_ids, tree.locate_all_at_point(p).map(|obj| obj.data), deduplicate);
-            }
-        }
-        offsets.push(ids.len());
-    }
-    (ids, offsets)
-}
-
-fn _append_point_ids<I>(
-    ids: &mut Vec<i64>,
-    point_ids: &mut Vec<i64>,
-    matches: I,
-    deduplicate: bool,
-) where
-    I: IntoIterator<Item = i64>,
-{
-    if deduplicate {
-        point_ids.clear();
-        point_ids.extend(matches);
-        point_ids.sort_unstable();
-        point_ids.dedup();
-        ids.extend_from_slice(point_ids);
-    } else {
-        ids.extend(matches);
-    }
-}
-    
-
-fn _rtree_locate_all_at_points_impl(
-    tree: *const RTreeH,
-    points: *const f64,
-    n_points: usize,
-    ids_out: *mut *mut i64,
-    offsets_out: *mut *mut usize,
-    deduplicate: bool,
-) -> RTreeError {
-    if tree.is_null() || ids_out.is_null() || offsets_out.is_null() {
-        return RTreeError::NullPointer;
-    }
-    if n_points != 0 && points.is_null() {
-        return RTreeError::NullPointer;
-    }
-    let rtree = unsafe { &*(tree as *const RTreeDim) };
-    let dim = _rtree_get_dimension(rtree);
-
-    let (ids, offsets) = if n_points == 0 {
-        (Vec::new(), vec![0])
-    } else {
-        let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
-        _locate_points_bulk(rtree, coords, deduplicate)
-    };
-
-    let mut ids = ids.into_boxed_slice();
-    let mut offsets = offsets.into_boxed_slice();
-    let ids_ptr = ids.as_mut_ptr();
-    let offsets_ptr = offsets.as_mut_ptr();
-    std::mem::forget(ids);
-    std::mem::forget(offsets);
-
-    unsafe {
-        *ids_out = ids_ptr;
-        *offsets_out = offsets_ptr;
-    }
-    RTreeError::Success
-}
-
 /// Returns the ids of all objects in the tree that contain each of the given points.
 /// `points` is an array of `n_points * dim` doubles
 /// The candidate ids are returned in `ids_out`, and `offsets_out`
@@ -291,6 +202,95 @@ pub extern "C" fn rtree_locate_all_at_points(
         offsets_out,
         false,
     )
+}
+
+fn _append_point_ids<I>(
+    ids: &mut Vec<i64>,
+    point_ids: &mut Vec<i64>,
+    matches: I,
+    deduplicate: bool,
+) where
+    I: IntoIterator<Item = i64>,
+{
+    if deduplicate {
+        point_ids.clear();
+        point_ids.extend(matches);
+        point_ids.sort_unstable();
+        point_ids.dedup();
+        ids.extend_from_slice(point_ids);
+    } else {
+        ids.extend(matches);
+    }
+}
+
+fn _rtree_locate_all_at_points_impl(
+    tree: *const RTreeH,
+    points: *const f64,
+    n_points: usize,
+    ids_out: *mut *mut i64,
+    offsets_out: *mut *mut usize,
+    deduplicate: bool,
+) -> RTreeError {
+    if tree.is_null() || ids_out.is_null() || offsets_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    if n_points != 0 && points.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let dim = _rtree_get_dimension(rtree);
+
+    let mut ids: Vec<i64> = Vec::new();
+    let mut point_ids: Vec<i64> = Vec::new();
+    let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
+    offsets.push(0);
+
+    if n_points != 0 {
+        let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
+        for i in 0..n_points {
+            let pt = &coords[i * dim..(i + 1) * dim];
+            match rtree {
+                RTreeDim::D1(tree) => _append_point_ids(
+                    &mut ids,
+                    &mut point_ids,
+                    tree.locate_all_at_point(pt[0]),
+                    deduplicate,
+                ),
+                RTreeDim::D2(tree) => {
+                    let p: [f64; 2] = [pt[0], pt[1]];
+                    _append_point_ids(
+                        &mut ids,
+                        &mut point_ids,
+                        tree.locate_all_at_point(p).map(|obj| obj.data),
+                        deduplicate,
+                    );
+                }
+                RTreeDim::D3(tree) => {
+                    let p: [f64; 3] = [pt[0], pt[1], pt[2]];
+                    _append_point_ids(
+                        &mut ids,
+                        &mut point_ids,
+                        tree.locate_all_at_point(p).map(|obj| obj.data),
+                        deduplicate,
+                    );
+                }
+            }
+            offsets.push(ids.len());
+        }
+    }
+
+    let mut ids = ids.into_boxed_slice();
+    let mut offsets = offsets.into_boxed_slice();
+    let ids_ptr = ids.as_mut_ptr();
+    let offsets_ptr = offsets.as_mut_ptr();
+    std::mem::forget(ids);
+    std::mem::forget(offsets);
+
+    unsafe {
+        *ids_out = ids_ptr;
+        *offsets_out = offsets_ptr;
+    }
+    RTreeError::Success
 }
 
 /// Returns the unique IDs of objects containing each point.
@@ -511,7 +511,7 @@ pub extern "C" fn rtree_free_bounding_boxes(
     RTreeError::Success
 }
 
-/// Frees the ids returned by `rtree_locate_all_at_points`.
+/// Frees the ids returned by `rtree_locate_all_at_point`.
 #[no_mangle]
 pub extern "C" fn rtree_free_ids(ids: *mut i64, n: usize) -> RTreeError {
     if ids.is_null() {

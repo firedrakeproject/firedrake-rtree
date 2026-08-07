@@ -62,7 +62,7 @@ RTreeError rtree_free(struct RTreeH *tree);
 RTreeError rtree_free_bounding_boxes(double *mins, double *maxs, size_t n_boxes, uint32_t dim);
 
 /**
- * Frees the ids returned by `rtree_locate_all_at_points`.
+ * Frees the ids returned by `rtree_locate_all_at_point`.
  */
 RTreeError rtree_free_ids(int64_t *ids, size_t n);
 
