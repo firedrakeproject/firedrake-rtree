@@ -179,6 +179,36 @@ pub extern "C" fn rtree_locate_all_at_point(
     RTreeError::Success
 }
 
+fn _locate_points_bulk(
+    tree: &RTreeDim,
+    coords: &[f64],
+) -> (Vec<i64>, Vec<usize>) {
+    let dim = _rtree_get_dimension(tree);
+    let n_points = coords.len() / dim;
+    let mut ids: Vec<i64> = Vec::new();
+    let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
+    offsets.push(0);
+
+    for point in coords.chunks_exact(dim) {
+        match tree {
+            RTreeDim::D1(tree) => {
+                ids.extend(tree.locate_all_at_point(point[0]));
+            }
+            RTreeDim::D2(tree) => {
+                let p: [f64; 2] = [point[0], point[1]];
+                ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
+            }
+            RTreeDim::D3(tree) => {
+                let p: [f64; 3] = [point[0], point[1], point[2]];
+                ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
+            }
+        }
+        offsets.push(ids.len());
+    }
+    (ids, offsets)
+}
+    
+
 /// Returns the ids of all objects in the tree that contain each of the given points.
 /// `points` is an array of `n_points * dim` doubles
 /// The candidate ids are returned in `ids_out`, and `offsets_out`
@@ -203,28 +233,12 @@ pub extern "C" fn rtree_locate_all_at_points(
     let rtree = unsafe { &*(tree as *const RTreeDim) };
     let dim = _rtree_get_dimension(rtree);
 
-    let mut ids: Vec<i64> = Vec::new();
-    let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
-    offsets.push(0);
-
-    if n_points != 0 {
+    let (ids, offsets) = if n_points == 0 {
+        (Vec::new(), vec![0])
+    } else {
         let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
-        for i in 0..n_points {
-            let pt = &coords[i * dim..(i + 1) * dim];
-            match rtree {
-                RTreeDim::D1(tree) => ids.extend(tree.locate_all_at_point(pt[0])),
-                RTreeDim::D2(tree) => {
-                    let p: [f64; 2] = [pt[0], pt[1]];
-                    ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
-                }
-                RTreeDim::D3(tree) => {
-                    let p: [f64; 3] = [pt[0], pt[1], pt[2]];
-                    ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
-                }
-            }
-            offsets.push(ids.len());
-        }
-    }
+        _locate_points_bulk(rtree, coords)
+    };
 
     let mut ids = ids.into_boxed_slice();
     let mut offsets = offsets.into_boxed_slice();
@@ -239,6 +253,32 @@ pub extern "C" fn rtree_locate_all_at_points(
     }
     RTreeError::Success
 }
+
+// #[no_mangle]
+// pub extern "C" fn rtree_locate_all_at_points_unique(
+//     tree: *const RTreeH,
+//     points: *const f64,
+//     n_points: usize,
+//     ids_out: *mut *mut i64,
+//     offsets_out: *mut *mut usize,
+// ) -> RTreeError {
+//     if tree.is_null() || ids_out.is_null() || offsets_out.is_null() {
+//         return RTreeError::NullPointer;
+//     }
+//     if n_points != 0 && points.is_null() {
+//         return RTreeError::NullPointer;
+//     }
+//     let rtree = unsafe { &*(tree as *const RTreeDim) };
+//     let dim = _rtree_get_dimension(rtree);
+//     let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) }; 
+//
+//     let (ids, offsets) = _locate_points_bulk(rtree, coords);
+//
+//     let ids = ids.into_boxed_slice();
+//
+//
+//     RTreeError::Success
+// }
 
 /// Returns the size of the tree, defined as the number of objects in the tree.
 /// An empty tree has size 0.
