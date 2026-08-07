@@ -872,6 +872,102 @@ bool test_locate_all_at_points(void) {
     return true;
 }
 
+bool test_locate_all_at_points_unique(void) {
+    const size_t N = 3;
+    const uint32_t dim = 2;
+    double mins[6] = {0.0, 0.0, 1.0, 1.0, 1.5, 1.5};
+    double maxs[6] = {2.0, 2.0, 3.0, 3.0, 4.0, 4.0};
+    int64_t ids[3] = {7, 7, 3};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        return false;
+    }
+
+    const size_t n_points = 3;
+    double points[6] = {
+        1.8, 1.8,   // 7, 7, 3
+        1.1, 1.1,   // 7, 7
+        -1.0, 0.0,  // none
+    };
+
+    int64_t *ids_out_unique = NULL;
+    size_t *offsets_out_unique = NULL;
+    RTreeError err = rtree_locate_all_at_points_unique(tree, points, n_points, &ids_out_unique, &offsets_out_unique);
+    if (err != Success) {
+        fprintf(stderr, "rtree_locate_all_at_points_unique returned error %d\n", err);
+        rtree_free(tree);
+        return false;
+    }
+
+    // offsets should be [0, 2, 3, 3].
+    size_t expected_offsets_unique[4] = {0, 2, 3, 3};
+    for (size_t i = 0; i < n_points + 1; i++) {
+        if (offsets_out_unique[i] != expected_offsets_unique[i]) {
+            fprintf(stderr, "Expected offsets_out_unique[%zu] = %zu, got %zu\n",
+                i, expected_offsets_unique[i], offsets_out_unique[i]);
+            rtree_free_ids(ids_out_unique, offsets_out_unique[n_points]);
+            rtree_free_offsets(offsets_out_unique, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+    
+    // `rtree_locate_all_at_points_unique` deduplicates IDs and returns them in sorted order.
+    int64_t expected_ids_unique[3] = {3, 7, 7};
+    for (size_t i = 0; i < offsets_out_unique[n_points]; i++) {
+        if (ids_out_unique[i] != expected_ids_unique[i]) {
+            fprintf(stderr, "Expected ids_out_unique[%zu] = %" PRId64 ", got %" PRId64 "\n",
+                i, expected_ids_unique[i], ids_out_unique[i]);
+            rtree_free_ids(ids_out_unique, offsets_out_unique[n_points]);
+            rtree_free_offsets(offsets_out_unique, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+    rtree_free_ids(ids_out_unique, offsets_out_unique[n_points]);
+    rtree_free_offsets(offsets_out_unique, n_points + 1);
+
+    // Test normal routine with duplicated IDs
+    int64_t *ids_out = NULL;
+    size_t *offsets_out = NULL;
+    err = rtree_locate_all_at_points(tree, points, n_points, &ids_out, &offsets_out);
+    if (err != Success) {
+        fprintf(stderr, "rtree_locate_all_at_points returned error %d\n", err);
+        rtree_free(tree);
+        return false;
+    }
+
+    size_t expected_offsets[4] = {0, 3, 5, 5};
+    for (size_t i = 0; i < n_points + 1; i++) {
+        if (offsets_out[i] != expected_offsets[i]) {
+            fprintf(stderr, "Expected offsets_out[%zu] = %zu, got %zu\n",
+                i, expected_offsets[i], offsets_out[i]);
+            rtree_free_ids(ids_out, offsets_out[n_points]);
+            rtree_free_offsets(offsets_out, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+
+    int64_t expected_ids[5] = {3, 7, 7, 7, 7};
+    for (size_t i = 0; i < offsets_out[n_points]; i++) {
+        if (ids_out[i] != expected_ids[i]) {
+            fprintf(stderr, "Expected ids_out[%zu] = %" PRId64 ", got %" PRId64 "\n",
+                i, expected_ids[i], ids_out[i]);
+            rtree_free_ids(ids_out, offsets_out[n_points]);
+            rtree_free_offsets(offsets_out, n_points + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+    rtree_free_ids(ids_out, offsets_out[n_points]);
+    rtree_free_offsets(offsets_out, n_points + 1);
+
+    rtree_free(tree);
+    return true;
+}
+
 
 void run_test(
     bool (test)(void),
@@ -902,6 +998,7 @@ int main(void) {
     run_test(test_invalid_dimension, "test_invalid_dimension", &passed);
     run_test(test_rtree_singleton_depth, "test_rtree_singleton_depth", &passed);
     run_test(test_rtree_depth, "test_rtree_depth", &passed);
+    run_test(test_locate_all_at_points_unique, "test_locate_all_at_points_unique", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
