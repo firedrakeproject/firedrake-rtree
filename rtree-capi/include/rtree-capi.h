@@ -102,6 +102,18 @@ RTreeError rtree_locate_all_at_points(const struct RTreeH *tree,
                                       size_t **offsets_out);
 
 /**
+ * Returns the unique IDs of objects containing each point.
+ * IDs are sorted in ascending order within each point's offset.
+ * Only useful if your RTree contains multiple bounding boxes sharing the same ID.
+ * You must free `ids_out` with `rtree_free_ids` and `offsets_out` with `rtree_free_offsets`.
+ */
+RTreeError rtree_locate_all_at_points_unique(const struct RTreeH *tree,
+                                             const double *points,
+                                             size_t n_points,
+                                             int64_t **ids_out,
+                                             size_t **offsets_out);
+
+/**
  * Returns the child nodes of a given node. You must free the returned child nodes with `rtree_node_children_free`.
  * If the node is a leaf, or a root node of an empty tree, returns nchildren = 0.
  */
