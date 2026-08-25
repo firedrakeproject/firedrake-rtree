@@ -313,7 +313,7 @@ pub extern "C" fn rtree_locate_points_grouped_by_id_unique(
     n_points: usize,
     ids_out: *mut *mut i64,
     offsets_out: *mut *mut usize,
-    point_indices_out: *mut *mut i32,
+    point_indices_out: *mut *mut usize,
     n_ids_out: *mut usize,
 ) -> RTreeError {
     if tree.is_null() || ids_out.is_null() || offsets_out.is_null() || point_indices_out.is_null() || n_ids_out.is_null() {
@@ -326,14 +326,14 @@ pub extern "C" fn rtree_locate_points_grouped_by_id_unique(
     let dim = _rtree_get_dimension(rtree);
 
     // Group IDs using a BTreeMap
-    let mut groups: BTreeMap<i64, Vec<i32>> = BTreeMap::new();
+    let mut groups: BTreeMap<i64, Vec<usize>> = BTreeMap::new();
     if n_points != 0 {
         let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
         _for_each_point_ids(rtree, coords, dim, |i, point_ids| {
             point_ids.sort_unstable();
             point_ids.dedup();
             for id in point_ids.iter() {
-                groups.entry(*id).or_default().push(i as i32);
+                groups.entry(*id).or_default().push(i);
             }
         });
     }
@@ -343,7 +343,7 @@ pub extern "C" fn rtree_locate_points_grouped_by_id_unique(
     let n_point_indices = groups.values().map(Vec::len).sum();
     let mut ids: Vec<i64> = Vec::with_capacity(n_ids);
     let mut offsets: Vec<usize> = Vec::with_capacity(n_ids + 1);
-    let mut point_indices: Vec<i32> = Vec::with_capacity(n_point_indices);
+    let mut point_indices: Vec<usize> = Vec::with_capacity(n_point_indices);
     offsets.push(0);
     for (id, indices) in groups {
         ids.push(id);
@@ -579,7 +579,7 @@ pub extern "C" fn rtree_free_ids(ids: *mut i64, n: usize) -> RTreeError {
 /// Frees the point indices returned by `rtree_locate_points_grouped_by_id_unique`.
 #[no_mangle]
 pub extern "C" fn rtree_free_point_indices(
-    point_indices: *mut i32,
+    point_indices: *mut usize,
     n: usize,
 ) -> RTreeError {
     if point_indices.is_null() {

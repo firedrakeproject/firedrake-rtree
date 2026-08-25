@@ -74,7 +74,7 @@ RTreeError rtree_free_offsets(size_t *offsets, size_t n);
 /**
  * Frees the point indices returned by `rtree_locate_points_grouped_by_id_unique`.
  */
-RTreeError rtree_free_point_indices(int32_t *point_indices, size_t n);
+RTreeError rtree_free_point_indices(size_t *point_indices, size_t n);
 
 /**
  * Returns the dimension of the tree.
@@ -130,7 +130,7 @@ RTreeError rtree_locate_points_grouped_by_id_unique(const struct RTreeH *tree,
                                                     size_t n_points,
                                                     int64_t **ids_out,
                                                     size_t **offsets_out,
-                                                    int32_t **point_indices_out,
+                                                    size_t **point_indices_out,
                                                     size_t *n_ids_out);
 
 /**
