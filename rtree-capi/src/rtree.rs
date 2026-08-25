@@ -338,6 +338,7 @@ pub extern "C" fn rtree_locate_points_grouped_by_id_unique(
         });
     }
 
+    // write grouped IDs into output Vecs
     let n_ids = groups.len();
     let n_point_indices = groups.values().map(Vec::len).sum();
     let mut ids: Vec<i64> = Vec::with_capacity(n_ids);
