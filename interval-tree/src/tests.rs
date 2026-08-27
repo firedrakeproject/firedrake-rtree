@@ -287,22 +287,21 @@ fn test_interval_tree_collect_intervals() {
     let maxs = vec![1.0, 1.5, 2.0, 0.5, -1.0];
     let ids = vec![0, 1, 2, 3, 4];
     let tree = IntervalTree::bulk_load(&mins, &maxs, &ids);
-    let root = tree.root().unwrap();
-    let level0_intervals = tree.collect_intervals(0);
-    for (min, max) in level0_intervals {
-        assert_eq!(min, root.min);
-        assert_eq!(max, root.max);
-    }
+
+    assert_eq!(tree.collect_intervals(0), vec![(-2.0, 2.0)]);
+
     let level1_intervals = tree.collect_intervals(1);
-    let left_node = root.left.as_ref().unwrap();
-    let right_node = root.right.as_ref().unwrap();
-    let expected_intervals = vec![
-        (left_node.min, left_node.max),
-        (right_node.min, right_node.max),
-    ];
-    for (index, (min, max)) in level1_intervals.iter().enumerate() {
-        let (expected_min, expected_max) = expected_intervals[index];
-        assert_eq!(*min, expected_min);
-        assert_eq!(*max, expected_max);
+    assert_eq!(
+        level1_intervals,
+        vec![(-1.0, 1.0), (-2.0, -1.0), (0.5, 2.0)]
+    );
+
+    for (&min, &max) in mins.iter().zip(&maxs) {
+        assert!(
+            level1_intervals
+                .iter()
+                .any(|&(cover_min, cover_max)| cover_min <= min && max <= cover_max),
+            "interval ({min}, {max}) is not covered at level 1"
+        );
     }
 }
