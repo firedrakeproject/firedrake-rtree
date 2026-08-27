@@ -72,6 +72,11 @@ RTreeError rtree_free_ids(int64_t *ids, size_t n);
 RTreeError rtree_free_offsets(size_t *offsets, size_t n);
 
 /**
+ * Frees the point indices returned by `rtree_locate_points_grouped_by_id_unique`.
+ */
+RTreeError rtree_free_point_indices(size_t *point_indices, size_t n);
+
+/**
  * Returns the dimension of the tree.
  */
 RTreeError rtree_get_dimension(const struct RTreeH *tree, uint32_t *dim);
@@ -112,6 +117,21 @@ RTreeError rtree_locate_all_at_points_unique(const struct RTreeH *tree,
                                              size_t n_points,
                                              int64_t **ids_out,
                                              size_t **offsets_out);
+
+/**
+ * Returns unique object IDs grouped across all points.
+ * IDs are sorted in ascending order. `offsets_out` has length `n_ids_out + 1`,
+ * and the point indices for `ids_out[i]` are `point_indices_out[offsets_out[i]..offsets_out[i + 1]]`.
+ * You must free `ids_out` with `rtree_free_ids`, `offsets_out` with
+ * `rtree_free_offsets`, and `point_indices_out` with `rtree_free_point_indices`.
+ */
+RTreeError rtree_locate_points_grouped_by_id_unique(const struct RTreeH *tree,
+                                                    const double *points,
+                                                    size_t n_points,
+                                                    int64_t **ids_out,
+                                                    size_t **offsets_out,
+                                                    size_t **point_indices_out,
+                                                    size_t *n_ids_out);
 
 /**
  * Returns the child nodes of a given node. You must free the returned child nodes with `rtree_node_children_free`.

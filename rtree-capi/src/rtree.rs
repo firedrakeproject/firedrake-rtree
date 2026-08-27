@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use interval_tree::{IntervalTree, IntervalTreeNode};
 use rstar::primitives::{GeomWithData, Rectangle};
 use rstar::{ParentNode, RTree, RTreeNode, RTreeObject, AABB};
@@ -204,25 +206,32 @@ pub extern "C" fn rtree_locate_all_at_points(
     )
 }
 
-fn _append_point_ids<I>(
-    ids: &mut Vec<i64>,
-    point_ids: &mut Vec<i64>,
-    matches: I,
-    deduplicate: bool,
-) where
-    I: IntoIterator<Item = i64>,
+/// Queries `rtree` for each point in `coords`, optionally applying a callback for each point.
+/// The bare minimum callback is probably to append the IDs to some Vec.
+fn _for_each_point_ids<F>(rtree: &RTreeDim, coords: &[f64], dim: usize, mut callback: F)
+where
+    F: FnMut(usize, &mut Vec<i64>),
 {
-    if deduplicate {
+    let mut point_ids: Vec<i64> = Vec::new();
+    for (i, pt) in coords.chunks_exact(dim).enumerate() {
         point_ids.clear();
-        point_ids.extend(matches);
-        point_ids.sort_unstable();
-        point_ids.dedup();
-        ids.extend_from_slice(point_ids);
-    } else {
-        ids.extend(matches);
+        match rtree {
+            RTreeDim::D1(tree) => point_ids.extend(tree.locate_all_at_point(pt[0])),
+            RTreeDim::D2(tree) => {
+                let p: [f64; 2] = [pt[0], pt[1]];
+                point_ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
+            }
+            RTreeDim::D3(tree) => {
+                let p: [f64; 3] = [pt[0], pt[1], pt[2]];
+                point_ids.extend(tree.locate_all_at_point(p).map(|obj| obj.data));
+            }
+        }
+        callback(i, &mut point_ids);
     }
 }
 
+/// Queries `rtree` for each point in `points`, returning an array of IDs and offsets into that array.
+/// Deduplicate the IDs by passing `deduplicate` equals true.
 fn _rtree_locate_all_at_points_impl(
     tree: *const RTreeH,
     points: *const f64,
@@ -241,42 +250,19 @@ fn _rtree_locate_all_at_points_impl(
     let dim = _rtree_get_dimension(rtree);
 
     let mut ids: Vec<i64> = Vec::new();
-    let mut point_ids: Vec<i64> = Vec::new();
     let mut offsets: Vec<usize> = Vec::with_capacity(n_points + 1);
     offsets.push(0);
 
     if n_points != 0 {
         let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
-        for i in 0..n_points {
-            let pt = &coords[i * dim..(i + 1) * dim];
-            match rtree {
-                RTreeDim::D1(tree) => _append_point_ids(
-                    &mut ids,
-                    &mut point_ids,
-                    tree.locate_all_at_point(pt[0]),
-                    deduplicate,
-                ),
-                RTreeDim::D2(tree) => {
-                    let p: [f64; 2] = [pt[0], pt[1]];
-                    _append_point_ids(
-                        &mut ids,
-                        &mut point_ids,
-                        tree.locate_all_at_point(p).map(|obj| obj.data),
-                        deduplicate,
-                    );
-                }
-                RTreeDim::D3(tree) => {
-                    let p: [f64; 3] = [pt[0], pt[1], pt[2]];
-                    _append_point_ids(
-                        &mut ids,
-                        &mut point_ids,
-                        tree.locate_all_at_point(p).map(|obj| obj.data),
-                        deduplicate,
-                    );
-                }
+        _for_each_point_ids(rtree, coords, dim, |_, point_ids| {
+            if deduplicate {
+                point_ids.sort_unstable();
+                point_ids.dedup();
             }
+            ids.extend_from_slice(point_ids);
             offsets.push(ids.len());
-        }
+        });
     }
 
     let mut ids = ids.into_boxed_slice();
@@ -313,6 +299,75 @@ pub extern "C" fn rtree_locate_all_at_points_unique(
         offsets_out,
         true,
     )
+}
+
+/// Returns unique object IDs grouped across all points.
+/// IDs are sorted in ascending order. `offsets_out` has length `n_ids_out + 1`, 
+/// and the point indices for `ids_out[i]` are `point_indices_out[offsets_out[i]..offsets_out[i + 1]]`.
+/// You must free `ids_out` with `rtree_free_ids`, `offsets_out` with
+/// `rtree_free_offsets`, and `point_indices_out` with `rtree_free_point_indices`.
+#[no_mangle]
+pub extern "C" fn rtree_locate_points_grouped_by_id_unique(
+    tree: *const RTreeH,
+    points: *const f64,
+    n_points: usize,
+    ids_out: *mut *mut i64,
+    offsets_out: *mut *mut usize,
+    point_indices_out: *mut *mut usize,
+    n_ids_out: *mut usize,
+) -> RTreeError {
+    if tree.is_null() || ids_out.is_null() || offsets_out.is_null() || point_indices_out.is_null() || n_ids_out.is_null() {
+        return RTreeError::NullPointer;
+    }
+    if n_points != 0 && points.is_null() {
+        return RTreeError::NullPointer;
+    }
+    let rtree = unsafe { &*(tree as *const RTreeDim) };
+    let dim = _rtree_get_dimension(rtree);
+
+    // Group IDs using a BTreeMap
+    let mut groups: BTreeMap<i64, Vec<usize>> = BTreeMap::new();
+    if n_points != 0 {
+        let coords = unsafe { std::slice::from_raw_parts(points, n_points * dim) };
+        _for_each_point_ids(rtree, coords, dim, |i, point_ids| {
+            point_ids.sort_unstable();
+            point_ids.dedup();
+            for id in point_ids.iter() {
+                groups.entry(*id).or_default().push(i);
+            }
+        });
+    }
+
+    // write grouped IDs into output Vecs
+    let n_ids = groups.len();
+    let n_point_indices = groups.values().map(Vec::len).sum();
+    let mut ids: Vec<i64> = Vec::with_capacity(n_ids);
+    let mut offsets: Vec<usize> = Vec::with_capacity(n_ids + 1);
+    let mut point_indices: Vec<usize> = Vec::with_capacity(n_point_indices);
+    offsets.push(0);
+    for (id, indices) in groups {
+        ids.push(id);
+        point_indices.extend(indices);
+        offsets.push(point_indices.len());
+    }
+
+    let mut ids = ids.into_boxed_slice();
+    let mut offsets = offsets.into_boxed_slice();
+    let mut point_indices = point_indices.into_boxed_slice();
+    let ids_ptr = ids.as_mut_ptr();
+    let offsets_ptr = offsets.as_mut_ptr();
+    let point_indices_ptr = point_indices.as_mut_ptr();
+    std::mem::forget(ids);
+    std::mem::forget(offsets);
+    std::mem::forget(point_indices);
+
+    unsafe {
+        *ids_out = ids_ptr;
+        *offsets_out = offsets_ptr;
+        *point_indices_out = point_indices_ptr;
+        *n_ids_out = n_ids;
+    }
+    RTreeError::Success
 }
 
 /// Returns the size of the tree, defined as the number of objects in the tree.
@@ -518,6 +573,19 @@ pub extern "C" fn rtree_free_ids(ids: *mut i64, n: usize) -> RTreeError {
         return RTreeError::NullPointer;
     }
     unsafe { drop(Vec::from_raw_parts(ids, n, n)) };
+    RTreeError::Success
+}
+
+/// Frees the point indices returned by `rtree_locate_points_grouped_by_id_unique`.
+#[no_mangle]
+pub extern "C" fn rtree_free_point_indices(
+    point_indices: *mut usize,
+    n: usize,
+) -> RTreeError {
+    if point_indices.is_null() {
+        return RTreeError::NullPointer;
+    }
+    unsafe { drop(Vec::from_raw_parts(point_indices, n, n)) };
     RTreeError::Success
 }
 

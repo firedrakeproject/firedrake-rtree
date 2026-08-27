@@ -968,6 +968,97 @@ bool test_locate_all_at_points_unique(void) {
     return true;
 }
 
+bool test_locate_points_grouped_by_id_unique(void) {
+    const size_t N = 4;
+    const uint32_t dim = 1;
+    double mins[4] = {0.0, 0.0, 0.5, 2.0};
+    double maxs[4] = {2.0, 1.0, 1.5, 3.0};
+    int64_t ids[4] = {7, 12, 12, 19};
+    RTreeH *tree = NULL;
+    rtree_bulk_load(&tree, mins, maxs, ids, N, dim);
+    if (tree == NULL) {
+        return false;
+    }
+
+    const size_t n_points = 4;
+    double points[4] = {
+        0.75,  // 7, 12, 12
+        1.75,  // 7
+        2.5,   // 19
+        10.0,  // none
+    };
+
+    int64_t *ids_out = NULL;
+    size_t *offsets_out = NULL;
+    size_t *point_indices_out = NULL;
+    size_t n_ids_out = 0;
+    RTreeError err = rtree_locate_points_grouped_by_id_unique(
+        tree,
+        points,
+        n_points,
+        &ids_out,
+        &offsets_out,
+        &point_indices_out,
+        &n_ids_out
+    );
+    if (err != Success) {
+        fprintf(stderr, "rtree_locate_points_grouped_by_id_unique returned error %d\n", err);
+        rtree_free(tree);
+        return false;
+    }
+
+    int64_t expected_ids[3] = {7, 12, 19};
+    size_t expected_offsets[4] = {0, 2, 3, 4};
+    size_t expected_point_indices[4] = {0, 1, 0, 2};
+    if (n_ids_out != 3) {
+        fprintf(stderr, "Expected 3 grouped IDs, got %zu\n", n_ids_out);
+        rtree_free_ids(ids_out, n_ids_out);
+        rtree_free_point_indices(point_indices_out, offsets_out[n_ids_out]);
+        rtree_free_offsets(offsets_out, n_ids_out + 1);
+        rtree_free(tree);
+        return false;
+    }
+    for (size_t i = 0; i < n_ids_out; i++) {
+        if (ids_out[i] != expected_ids[i]) {
+            fprintf(stderr, "Expected ids_out[%zu] = %" PRId64 ", got %" PRId64 "\n",
+                i, expected_ids[i], ids_out[i]);
+            rtree_free_ids(ids_out, n_ids_out);
+            rtree_free_point_indices(point_indices_out, offsets_out[n_ids_out]);
+            rtree_free_offsets(offsets_out, n_ids_out + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+    for (size_t i = 0; i < n_ids_out + 1; i++) {
+        if (offsets_out[i] != expected_offsets[i]) {
+            fprintf(stderr, "Expected offsets_out[%zu] = %zu, got %zu\n",
+                i, expected_offsets[i], offsets_out[i]);
+            rtree_free_ids(ids_out, n_ids_out);
+            rtree_free_point_indices(point_indices_out, offsets_out[n_ids_out]);
+            rtree_free_offsets(offsets_out, n_ids_out + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+    for (size_t i = 0; i < offsets_out[n_ids_out]; i++) {
+        if (point_indices_out[i] != expected_point_indices[i]) {
+            fprintf(stderr, "Expected point_indices_out[%zu] = %zu, got %zu\n",
+                i, expected_point_indices[i], point_indices_out[i]);
+            rtree_free_ids(ids_out, n_ids_out);
+            rtree_free_point_indices(point_indices_out, offsets_out[n_ids_out]);
+            rtree_free_offsets(offsets_out, n_ids_out + 1);
+            rtree_free(tree);
+            return false;
+        }
+    }
+
+    rtree_free_ids(ids_out, n_ids_out);
+    rtree_free_point_indices(point_indices_out, offsets_out[n_ids_out]);
+    rtree_free_offsets(offsets_out, n_ids_out + 1);
+    rtree_free(tree);
+    return true;
+}
+
 
 void run_test(
     bool (test)(void),
@@ -999,6 +1090,7 @@ int main(void) {
     run_test(test_rtree_singleton_depth, "test_rtree_singleton_depth", &passed);
     run_test(test_rtree_depth, "test_rtree_depth", &passed);
     run_test(test_locate_all_at_points_unique, "test_locate_all_at_points_unique", &passed);
+    run_test(test_locate_points_grouped_by_id_unique, "test_locate_points_grouped_by_id_unique", &passed);
 
     if (passed) {
         fprintf(stdout, "All tests passed\n");
