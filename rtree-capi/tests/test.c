@@ -461,18 +461,22 @@ bool test_rtree_node_1d(void) {
     double *collected_maxs = NULL;
     size_t nboxes = 0;
     RTreeError err = rtree_collect_bounding_boxes(tree, 1, &collected_mins, &collected_maxs, &nboxes);
-    if (err != Success || nboxes != nchildren) {
-        fprintf(stderr, "Expected %zu collected 1D bounding boxes at level 1, got %zu\n",
-            nchildren, nboxes);
+    if (err != Success || nboxes != 3) {
+        fprintf(stderr, "Expected 3 collected 1D bounding boxes at level 1, got %zu\n",
+            nboxes);
         rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
         rtree_node_children_free(children, nchildren);
         rtree_node_free(root);
         rtree_free(tree);
         return false;
     }
+    bool found_root_intervals = false;
     bool found_child1 = false;
     bool found_child2 = false;
     for (size_t i = 0; i < nboxes; i++) {
+        if (collected_mins[i] == -1.0 && collected_maxs[i] == 1.0) {
+            found_root_intervals = true;
+        }
         if (collected_mins[i] == child1_min[0] && collected_maxs[i] == child1_max[0]) {
             found_child1 = true;
         }
@@ -480,8 +484,8 @@ bool test_rtree_node_1d(void) {
             found_child2 = true;
         }
     }
-    if (!found_child1 || !found_child2) {
-        fprintf(stderr, "Expected collected 1D bounding boxes to contain both child envelopes\n");
+    if (!found_root_intervals || !found_child1 || !found_child2) {
+        fprintf(stderr, "Expected collected 1D bounding boxes to contain the root intervals and both child envelopes\n");
         rtree_free_bounding_boxes(collected_mins, collected_maxs, nboxes, dim);
         rtree_node_children_free(children, nchildren);
         rtree_node_free(root);

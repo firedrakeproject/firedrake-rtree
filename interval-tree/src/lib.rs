@@ -151,23 +151,10 @@ impl IntervalTree {
         let Some(root) = &self.root else {
             return Vec::new();
         };
-        let mut nodes = vec![root];
-        for _ in 0..level {
-            let mut next = Vec::new();
-            for node in &nodes {
-                if let Some(left) = &node.left {
-                    next.push(left.as_ref());
-                }
-                if let Some(right) = &node.right {
-                    next.push(right.as_ref());
-                }
-            }
-            if next.is_empty() {
-                break;
-            }
-            nodes = next
-        }
-        nodes.into_iter().map(|node| (node.min, node.max)).collect()
+
+        let mut result = Vec::new();
+        collect_cover(root, level, &mut result);
+        result
     }
 
     /// Returns the number of intervals in the tree.
@@ -189,6 +176,27 @@ impl IntervalTree {
             root: None,
             size: 0,
         }
+    }
+}
+
+fn collect_cover(node: &IntervalTreeNode, remaining_levels: usize, result: &mut Vec<(f64, f64)>) {
+    if remaining_levels == 0 {
+        result.push((node.min, node.max));
+        return;
+    }
+
+    if let (Some(first), Some(last)) = (
+        node.overlapping_by_min.first(),
+        node.overlapping_by_max.last(),
+    ) {
+        result.push((first.0, last.1));
+    }
+
+    if let Some(left) = &node.left {
+        collect_cover(left, remaining_levels - 1, result);
+    }
+    if let Some(right) = &node.right {
+        collect_cover(right, remaining_levels - 1, result);
     }
 }
 
