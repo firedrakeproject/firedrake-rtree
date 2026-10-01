@@ -29,4 +29,9 @@ fn generate_bindings() {
 
 fn main() {
     generate_bindings();
+    match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
+        "macos" => println!("cargo:rustc-cdylib-link-arg=-Wl,-install_name,@rpath/libfiredrake_rtree.dylib"),
+        "linux" => println!("cargo:rustc-cdylib-link-arg=-Wl,-soname,libfiredrake_rtree.so"),
+        _ => (),
+    }
 }

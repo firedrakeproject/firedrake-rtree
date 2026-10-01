@@ -30,7 +30,7 @@ fn c_api() {
             test_src.to_str().unwrap(),
             "-L",
             lib_dir.to_str().unwrap(),
-            "-lrtree_capi",
+            "-lfiredrake_rtree",
             "-o",
             test_binary.to_str().unwrap(),
         ])

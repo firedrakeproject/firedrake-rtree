@@ -6,6 +6,7 @@ build-backend = "maturin"
 name = "firedrake-rtree"
 description = "C api for spatial indexing"
 requires-python = ">=3.10"
+dependencies = ["cffi"]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Rust",
@@ -23,8 +24,8 @@ dynamic = ["version"]  # gets version from rtree-capi/Cargo.toml
 Repository = "https://github.com/firedrakeproject/firedrake-rtree"
 
 [tool.maturin]
+bindings = "cffi"
 manifest-path = "rtree-capi/Cargo.toml"
-features = ["python"]
 python-source = "."
 module-name = "firedrake_rtree"
 include = [
