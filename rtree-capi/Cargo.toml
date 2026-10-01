@@ -4,13 +4,9 @@ name = "rtree-capi"
 version = "2026.3.0-dev"
 edition = "2021"
 
-[features]
-python = ["pyo3"]
-
 [dependencies]
 rstar = "0.13.0"
 interval-tree = { path = "../interval-tree" }
-pyo3 = { version = "0.28", features = ["extension-module"], optional = true }
 
 [build-dependencies]
 cbindgen = "0.29"
