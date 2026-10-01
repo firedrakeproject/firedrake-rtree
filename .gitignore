@@ -7,3 +7,4 @@ firedrake_rtree/*.pyd
 firedrake_rtree/*.dSYM
 firedrake_rtree/include
 firedrake_rtree/__pycache__
+firedrake_rtree/firedrake_rtree/
