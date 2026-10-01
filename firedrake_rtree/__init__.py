@@ -1,22 +1,14 @@
-import importlib.resources
-import os
-import sysconfig
+from pathlib import Path
+
+_firedrake_rtree_dir = Path(__file__).parent
+
+
+def get_library() -> str:
+    """Return the path to the rtree-capi shared object."""
+    return str(next(_firedrake_rtree_dir.joinpath("firedrake_rtree").glob("*firedrake_rtree*")))
 
 
 def get_include() -> str:
     """Return the directory containing rtree-capi.h."""
-    with importlib.resources.as_file(
-        importlib.resources.files("firedrake_rtree") / "include"
-    ) as include_dir:
-        return str(include_dir)
+    return str(_firedrake_rtree_dir.joinpath("include"))
 
-
-def get_lib() -> str:
-    """Return the directory containing the rtree-capi shared object."""
-    return os.path.dirname(os.path.abspath(__file__))
-
-
-def get_lib_filename() -> str:
-    """Return the path to the rtree-capi shared object."""
-    suffix = sysconfig.get_config_var("EXT_SUFFIX")
-    return os.path.join(get_lib(), f"firedrake_rtree{suffix}")
