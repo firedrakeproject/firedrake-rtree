@@ -3,12 +3,13 @@ from pathlib import Path
 _firedrake_rtree_dir = Path(__file__).parent
 
 
-def get_library() -> str:
+def get_library() -> Path:
     """Return the path to the rtree-capi shared object."""
-    return str(next(_firedrake_rtree_dir.joinpath("firedrake_rtree").glob("*firedrake_rtree*")))
+    return next(
+        _firedrake_rtree_dir.joinpath("firedrake_rtree").glob("*firedrake_rtree*")
+    )
 
 
-def get_include() -> str:
+def get_include() -> Path:
     """Return the directory containing rtree-capi.h."""
-    return str(_firedrake_rtree_dir.joinpath("include"))
-
+    return _firedrake_rtree_dir.joinpath("include")
