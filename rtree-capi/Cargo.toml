@@ -12,5 +12,5 @@ interval-tree = { path = "../interval-tree" }
 cbindgen = "0.29"
 
 [lib]
-name = "rtree_capi"
+name = "firedrake_rtree"
 crate-type = ["cdylib"]
